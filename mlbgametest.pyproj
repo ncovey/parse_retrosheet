@@ -27,7 +27,7 @@
     <Compile Include="mlbgametest2.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="parse_retrosheets.py">
+    <Compile Include="parse_retrosheet.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="pybaseballtest.py">

@@ -1,11 +1,11 @@
 
 import os
-from parse_retrosheets import *
-from parse_retrosheets import record_type as rt
+from parse_retrosheet import *
+from parse_retrosheet import record_type as rt
 
 '''
 I want to see if it is possible to compile information about catcher performances to help quantify their defensive performance. This is a relatively uncharted area of research, and is a notoriously difficult problem.
-cERA (catcher ERA) is interesting, but I feel it does not really indicate how a pitcher performed with that particular battery with that catcher.
+cERA (catcher ERA) is interesting, but it lumps together all of the pitchers instead of how each pitcher performed in a particular battery with that catcher.
 In that vein, I would like to gather all of the pitcher-catcher batteries and calculate each one's performance. While catchers tend to catch most, if not all, games in a season for a club, sometimes for a full 9 innings, I think it can be helpful to look at how every battery performed from year-to-year.
 We can evaluate many things specific to each battery (ERA being one of them), as well as framing numbers, CS rate, take-off rate, passed balls, wild pitches, pitch type %, walk rate, strikeout rate, etc.
 We can then look at the battery's performace to the pitcher's above/below overall performance AND the battery's performance to the catcher's overall performance (maybe for that season, or from year to year).
@@ -57,7 +57,7 @@ def main():
             if (starter.start_field_pos == fpos.C):
                 print (starter.name,fpos.getname(starter.start_field_pos))
         #for sub in game.substitutions:
-        #    if (sub)
+        #    if (sub.s)
 
     return
 
