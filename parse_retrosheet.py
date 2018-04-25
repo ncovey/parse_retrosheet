@@ -10,7 +10,6 @@ class pitchres(Enum):
     pickoff_first = '1'
     pickoff_second = '2'
     pickoff_third = '3'
-    catcher_pickoff = '+'
     foul_bunt = 'L'
     missed_bunt = 'M'
     swinging_strike_pitchout = 'Q'
@@ -21,7 +20,13 @@ class pitchres(Enum):
     strike = 'K'
     unknown = 'U'
     in_play = 'X'
+    in_play_pitchout = 'Y'
 
+class pitchres_mod(Enum):
+    # these are modifiers that come after the pitch result
+    catcher_pickoff = '+'
+    catcher_blocked_pitch = '*'
+    runner_going = '>'
 
 
 class fpos(Enum):
@@ -108,12 +113,23 @@ class starter_record(record):
 class play_record(record):
     def __init__(self, tokens = []):
         record.__init__(self, tokens)
-        self.inning = self._values[1]
+        self.inning = self._values[0]
+        self.is_home = True if int(self._values[1]) is 1 else False
+        self.player_id = self._values[2]
+        self.count = list(self._values[3])
+        self.pitch_results = list(self._values[4])
+        self.play_results = self._values[5] #(self._values[5].split(',')) # should not contain commas! this might be a bug in the EVN sheet
+    def parse_play_results(self):
+        for 
+        
+class sub_record(record):
+    def __init__(self, tokens = []):
+        record.__init__(self, tokens)
+        self.player_id = self._values[0]
+        self.name = self._values[1]
         self.is_home = True if int(self._values[2]) is 1 else False
-        self.player_id = self._values[3]
-        self.count = list(self._values[4])
-        self.pitch_results = list(self._values[5])
-
+        self.batting_order = self._values[3]
+        self.sub_field_pos = fpos.ntofpos(int(self._values[4]))
 
 class game_record:
     def __init__(self):
@@ -134,12 +150,12 @@ class game_record:
         elif (tk == record_type.start.value):
             self.starters.append(starter_record(tokens))
         elif (tk == record_type.play.value):
-            self.plays.append(record(tokens))
+            self.plays.append(play_record(tokens))
         elif (tk == record_type.com.value):
             self.comments.append(record(tokens))
         elif (tk == record_type.sub.value):
             #self.substitutions.append(record(tokens))
-            self.plays.append(record(tokens))
+            self.plays.append(sub_record(tokens))
         elif (tk == record_type.data.value):
             self.data.append(record(tokens))
 
