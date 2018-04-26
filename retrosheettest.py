@@ -42,17 +42,19 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
         batteries[pitcher] = []
         pitcher_starts = batteries.get(pitcher)
     #pitcher_starts.append(game)
-    nprev_play = -1
-    outs = 0
+    #nprev_play = -1
+    #outs = 0
     for n, play in enumerate(game.plays):
-        if play._type == rt.sub.value:
-            if play.sub_field_pos == fpos.P:
-                if nprev_play != -1:
-                    print (game.plays[nprev_play].inning)
+        if play._type == rt.play.value:
+            play.parse_play_results()
+    #    if play._type == rt.sub.value:
+    #        if play.sub_field_pos == fpos.P:
+    #            if nprev_play != -1:
+    #                print (game.plays[nprev_play].inning)
                     
         #else:
 
-        nprev_play = n
+        #nprev_play = n
 
 
 def main():
