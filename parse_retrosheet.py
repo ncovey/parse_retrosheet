@@ -92,31 +92,112 @@ class play_record(record):
         self.player_id = self._values[2]
         self.count = list(self._values[3])
         self.pitch_results = list(self._values[4])
-        self.play_results = self._values[5] #(self._values[5].split(',')) # should not contain commas! this might be a bug in the EVN sheet        
-        self.codes = list(retrosheet_codes.play_event_codes)
-        self.codes.sort(key = lambda s: len(s.value), reverse=True)
-        self.locations = list(retrosheet_codes.location_codes)
-        self.locations.sort(key = lambda s: len(s.value), reverse=True)
+        self.play_results = self._values[5] #(self._values[5].split(',')) # should not contain commas! this might be a bug in the EVN sheet
+        self.runs_scored = -1 # uninitialized
+        self.outs_made = -1
+        self.errors = []
+        self.base_runner_adv = []
+        self.base_hit = False
+        #self.parse_play_results()
+
+
 
     def parse_play_results(self):
         num_plays = 0
-        for code in self.codes:
-            if code.value in self.play_results:
-                print (self.play_results, code._name_, code.value)
-                num_plays += 1
+        print('Inning: {} of the {} | {} |'.format('bottom' if self.is_home else 'top', self.inning, self.player_id))
+        print(self.play_results)
+        play = self.play_results
+        desc = [] #descriptors
+        if ('/' in play):
+            _tokens = play.split('/')
+            if (len(_tokens) > 1):
+                play = _tokens[0]
+                desc = _tokens[1:]
+        print(play, desc)
 
-                for loc in self.locations:
-                    if loc.value in self.play_results:
-                        print (self.play_results.replace(loc.value,''), loc.value)
-                        break
+
+        hit = retrosheet_codes.get_event_code(play, retrosheet_codes.base_hit_event_codes)
+        loc = None
+        batted_type = None
+        if (hit != None):
+            loc = retrosheet_codes.get_event_code(play, retrosheet_codes.location_codes)
+            batted_type = retrosheet_codes.get_event_code(play, retrosheet_codes.batted_ball_type)
+            print ('{} hits a {} into {} for a {}'.format(self.player_id, 
+                                                          batted_type._name_ if batted_type != None else '', 
+                                                          loc._name_ if loc != None else '', 
+                                                          hit._name_ if hit != None else ''))
+            self.base_hit = True
                 
+        play_type = retrosheet_codes.get_event_code(play, retrosheet_codes.play_event_codes)
+        if play_type != None: print(play_type._name_)
+        if (play_type == retrosheet_codes.play_event_codes.walk or 
+        play_type == retrosheet_codes.play_event_codes.intentional_walk or
+        play_type == retrosheet_codes.play_event_codes.hit_by_pitch):
+            print('{} reaches base on a {}'.format(self.player_id, play_type._name_))
+        else:
+            out_type = retrosheet_codes.get_event_code(play, retrosheet_codes.out_play_event_codes)
+            if play.isdigit() or play.replace('(','').replace(')','').isdigit():
+                for m in desc:
+                    out_type = retrosheet_codes.get_event_code(m, retrosheet_codes.out_play_event_codes)
+                    if out_type != None: 
+                        break        
+            if hit == None and out_type == None: #this might happen for a simple ground out where only the batted ball type is recorded
+                self.outs_made = 1
+                for m in desc:
+                    batted_type = retrosheet_codes.get_event_code(m, retrosheet_codes.batted_ball_type)
+                    if batted_type != None: 
+                        break
+                print('{} - {}: play made by {}'.format(self.player_id, batted_type._name_ if batted_type != None else '', play))
+            elif out_type != None:
+                if ((out_type.value != 'NTP') and ('triple_play' in out_type._name_.lower())):
+                    self.outs_made = 3
+                elif ((out_type.value != 'NDP') and ('double_play' in out_type._name_.lower())):
+                    self.outs_made = 2
+                else:
+                    self.outs_made = 1
+                print('{} - {}: play {}'.format(self.player_id, out_type._name_, play))            
+            else:
+                self.outs_made = 0
+        print('{} outs were made on this play'.format(self.outs_made))
+
+        if '.' in self.play_results:
+            _plays = self.play_results.split('.')
+            for tok in _plays:
+                advances = tok.split(';')
+                for adv in advances:
+                    if ('-' in adv):
+                        runner, base = adv.split('-')
+                        if runner == 'B': runner = "batter's box"
+                        if runner == '1': runner = 'first'
+                        elif runner == '2': runner = 'second'
+                        elif runner == '3': runner = 'third'                                
+                        if base == '1': base = 'first'
+                        elif base == '2': base = 'second'
+                        elif base == '3': base = 'third'
+                        elif base == 'H': base = 'home'
+                        print ('Runner at {} advances to {} base'.format(runner, base))
+
+        #for code in retrosheet_codes.all_plays_sorted:
+        #    if code.value in self.play_results:
+        #        num_plays += 1
+
+        #        if code in retrosheet_codes.out_play_event_codes:
+        #        else:
+        #            # unknown type. possibly an error
+        #            self.outs_made = 0
+
+        #        if '/' in self.play_results:
+        #            tokens = self.play_results.split('/')
+        #            print(tokens)
 
 
-                break
-        if num_plays == 0: #not bFound:
-            print ("Could not find a matching code for play: '{}'".format(self.play_results))
-        elif num_plays > 1:
-            print ('----------------multiple matches for play')
+            
+        #        break
+
+        #if num_plays == 0: #not bFound:
+        #    print ("Could not find a matching code for play: '{}'".format(self.play_results))
+        #elif num_plays > 1:
+        #    print ('----------------multiple matches for play')
         
 class sub_record(record):
     def __init__(self, tokens = []):

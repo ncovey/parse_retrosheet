@@ -3,105 +3,27 @@ from enum import Enum
 
 
 class play_event_codes(Enum):
-    '''
-    AP    appeal play
-    BP    pop up bunt
-    BG    ground ball bunt
-    BGDP  bunt grounded into double play
-    BINT  batter interference
-    BL    line drive bunt
-    BOOT  batting out of turn
-    BP    bunt pop up
-    BPDP  bunt popped into double play
-    BR    runner hit by batted ball
-    C     called third strike
-    COUB  courtesy batter
-    COUF  courtesy fielder
-    COUR  courtesy runner
-    DP    unspecified double play
-    E$    error on $
-    F     fly
-    FDP   fly ball double play
-    FINT  fan interference
-    FL    foul
-    FO    force out
-    G     ground ball
-    GDP   ground ball double play
-    GTP   ground ball triple play
-    IF    infield fly rule
-    INT   interference
-    IPHR  inside the park home run
-    L     line drive
-    LDP   lined into double play
-    LTP   lined into triple play
-    MREV  manager challenge of call on the field
-    NDP   no double play credited for this play
-    OBS   obstruction (fielder obstructing a runner)
-    P     pop fly
-    PASS  a runner passed another runner and was called out
-    R$    relay throw from the initial fielder to $ with no out made
-    RINT  runner interference
-    SF    sacrifice fly
-    SH    sacrifice hit (bunt)
-    TH    throw
-    TH%   throw to base %
-    TP    unspecified triple play
-    UINT  umpire interference
-    UREV  umpire review of call on the field
-    '''
-    home_run = 'HR'
     no_play = 'NP'
-    bunt_ground_ball = 'BG'
-    bunt_popup = 'BP'
-    sacrifice_fly = 'SF'
-    force_out = 'FO'
-    sacrifice_hit = 'SH'
-    ground_ball = 'G'
-    line_drive = 'L'
-    popup = 'P'
-    fly_ball = 'F'
-    error = 'E' #$
-    error_P = 'E1'
-    error_C = 'E2'
-    error_1B = 'E3'
-    error_2B = 'E4'
-    error_3B = 'E5'
-    error_SS = 'E6'
-    error_LF = 'E7'
-    error_CF = 'E8'
-    error_RF = 'E9'
-    strikeout = 'K'
-    wild_pitch = 'WP'
-    passed_ball = 'PB'
     intentional_walk = 'IW'
     walk = 'W'
-    stolen_base = 'SB'
+    stolen_base = 'SB' #%
+    stolen_base_1B = 'SB1'
+    stolen_base_2B = 'SB2'
+    stolen_base_3B = 'SB3'
+    stolen_base_H = 'SBH'
     appeal_play = 'AP'
-    bunt_ground_ball_double_play = 'BGDP'
     batter_interference = 'BINT'
     bunt_line_drive = 'BL'
     batting_out_of_turn = 'BOOT'
-    bunt_popup_double_play = 'BPDP'
-    runner_hit_by_batted_ball = 'BR'
-    called_3rd_strike = 'C'
     courtesy_batter = 'COUB'
     courtesy_fielder = 'COUF'
     courtesy_runner = 'COUR'
-    double_play = 'DP' #unspecified
-    fly_ball_double_play = 'FDP'
     fan_interference = 'FINT'
-    foul = 'FL'
-    ground_ball_double_play = 'GDP'
-    ground_ball_triple_play = 'GTP'
-    infield_fly_rule = 'IF'
+    foul = 'FL' #foul ball?
     interference = 'INT' #unspecified
-    inside_the_park_home_run = 'IPHR'
-    lined_into_double_play = 'LDP'
-    lined_into_triple_play = 'LTP'
     manager_review = 'MREV'
     no_double_play = 'NDP'
     obstruction = 'OBS'
-    runner_pass_out = 'PASS'
     relay_throw = 'R' #$
     relay_throw_P = 'R1'
     relay_throw_C = 'R2'
@@ -118,11 +40,49 @@ class play_event_codes(Enum):
     throw_to_2B = 'TH2'
     throw_to_3B = 'TH3'
     throw_to_H = 'THH'
-    triple_play = 'TP' #unspecified
     umpire_interference = 'UINT'
     umpire_reivew = 'UREV'
     defensive_interference = 'DI'
     base_runner_advance = 'OA' #unspecified by other codes
+    unearned_run = 'UR'
+    no_rbi_credited = 'NR'
+    no_rbi_credited = 'NORBI'
+    hit_by_pitch = 'HP'
+
+
+class batted_ball_type(Enum):    
+    bunt_ground_ball = 'BG'
+    ground_ball = 'G'
+    fly_ball = 'F'
+    line_drive = 'L'
+
+
+class fielding_error_event_codes(Enum):
+    error = 'E' #$
+    error_P = 'E1'
+    error_C = 'E2'
+    error_1B = 'E3'
+    error_2B = 'E4'
+    error_3B = 'E5'
+    error_SS = 'E6'
+    error_LF = 'E7'
+    error_CF = 'E8'
+    error_RF = 'E9'
+    wild_pitch = 'WP'
+    passed_ball = 'PB'
+    error_on_foul_fly = 'FLE' #$
+    error_on_foul_fly_P = 'FLE1'
+    error_on_foul_fly_C = 'FLE2'
+    error_on_foul_fly_1B = 'FLE3'
+    error_on_foul_fly_2B = 'FLE4'
+    error_on_foul_fly_3B = 'FLE5'
+    error_on_foul_fly_SS = 'FLE6'
+    error_on_foul_fly_LF = 'FLE7'
+    error_on_foul_fly_CF = 'FLE8'
+    error_on_foul_fly_RF = 'FLE9'
+    
+
+class base_hit_event_codes(Enum):
     single = 'S' #$
     single_to_P = 'S1'
     single_to_C = 'S2'
@@ -153,7 +113,65 @@ class play_event_codes(Enum):
     triple_to_LF = 'T7'
     triple_to_CF = 'T8'
     triple_to_RF = 'T9'
+    home_run = 'HR'
+    homerun = 'H' # alt code
+    inside_the_park_home_run = 'IPHR'
 
+
+class out_play_event_codes(Enum):
+    bunt_popup = 'BP'
+    sacrifice_fly = 'SF'
+    force_out = 'FO'
+    sacrifice_hit = 'SH'
+    popup = 'P'
+    strikeout = 'K'
+    bunt_ground_ball_double_play = 'BGDP'
+    bunt_popup_double_play = 'BPDP'
+    runner_hit_by_batted_ball = 'BR'
+    called_3rd_strike = 'C'
+    double_play = 'DP' #unspecified
+    triple_play = 'TP' #unspecified
+    fly_ball_double_play = 'FDP'
+    ground_ball_double_play = 'GDP'
+    ground_ball_triple_play = 'GTP'
+    infield_fly_rule = 'IF'
+    lined_into_double_play = 'LDP'
+    lined_into_triple_play = 'LTP'
+    runner_passed = 'PASS'
+    caught_stealing = 'CS' #%
+    caught_stealing_1B = 'CS1' # I don't think this is possible
+    caught_stealing_2B = 'CS2'
+    caught_stealing_3B = 'CS3'
+    caught_stealing_H = 'CSH'
+    fielders_choice = 'FC' #$ - fielder first fielding the ball
+    fielders_choice_P = 'FC1'
+    fielders_choice_C = 'FC2'
+    fielders_choice_1B = 'FC3'
+    fielders_choice_2B = 'FC4'
+    fielders_choice_3B = 'FC5'
+    fielders_choice_SS = 'FC6'
+    fielders_choice_LF = 'FC7'
+    fielders_choice_CF = 'FC8'
+    fielders_choice_RF = 'FC9'
+    runner_put_out = 'X' # %X%($...$)
+    runner_put_out_at_1B = 'X1'
+    runner_put_out_at_2B = 'X2'
+    runner_put_out_at_3B = 'X3'
+    runner_put_out_at_H = 'XH'
+
+
+#class baserunner_advances(Enum):
+#    bbox_to_1B = 'B-1'
+#    bbox_to_2B = 'B-2'
+#    bbox_to_3B = 'B-3'
+#    bbox_to_H = 'B-H' #'IPHR' is more likely to be used here
+#    first_to_2B = '1-2'
+#    first_to_3B = '1-3'
+#    first_to_H = '1-H'
+#    second_to_3B = '2-3'
+#    second_to_H = '2-H'
+#    third_to_home = '3-H'
+    
 
 class location_codes(Enum):
     _1 = '1'
@@ -226,6 +244,61 @@ class location_codes(Enum):
     _9LSF = '9LSF'
 
 
+sorted_play_codes = list(play_event_codes)
+sorted_play_codes.sort(key = lambda s: len(s.value), reverse=True)
+sorted_out_play_codes = list(out_play_event_codes)
+sorted_out_play_codes.sort(key = lambda s: len(s.value), reverse=True)
+sorted_base_hit_codes = list(base_hit_event_codes)
+sorted_base_hit_codes.sort(key = lambda s: len(s.value), reverse=True)
+sorted_error_codes = list(fielding_error_event_codes)
+sorted_error_codes.sort(key = lambda s: len(s.value), reverse=True)
+        
+all_plays_sorted = []
+all_plays_sorted += sorted_play_codes
+all_plays_sorted += sorted_out_play_codes
+all_plays_sorted += sorted_base_hit_codes
+all_plays_sorted += sorted_error_codes
+all_plays_sorted.sort(key = lambda s: len(s.value), reverse=True)
+
+sorted_locations = list(location_codes)
+sorted_locations.sort(key = lambda s: len(s.value), reverse=True)
+
+
+#@staticmethod
+def get_event_code(_events, type):
+    if _events == '': return None
+    if type is play_event_codes:
+        for code in all_plays_sorted:
+            if code.value in _events:
+                return code
+    elif type is play_event_codes:
+        for code in sorted_play_codes:
+            if code.value in _events:
+                return code
+    elif type is out_play_event_codes:
+        for code in sorted_out_play_codes:
+            if code.value in _events:
+                return code
+    elif type is base_hit_event_codes:
+        for code in sorted_base_hit_codes:
+            if code.value in _events:
+                return code
+    elif type is fielding_error_event_codes:
+        for code in sorted_error_codes:
+            if code.value in _events:
+                return code
+    elif type is location_codes:
+        for code in sorted_locations:
+            if code.value in _events:
+                return code
+    elif type is batted_ball_type:
+        for code in batted_ball_type:
+            if code.value in _events:
+                return code
+    else:
+        return None
+    
+
 class pitchres(Enum):
     # pitch result
     called_strike = 'C'
@@ -246,7 +319,6 @@ class pitchres(Enum):
     unknown = 'U'
     in_play = 'X'
     in_play_pitchout = 'Y'
-
 
 class pitchres_mod(Enum):
     # these are modifiers that come after the pitch result
