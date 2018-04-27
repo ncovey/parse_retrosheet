@@ -36,6 +36,9 @@
     <Compile Include="retrosheettest.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="retrosheet_codes.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|2.7" />
