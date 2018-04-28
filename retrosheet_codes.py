@@ -3,6 +3,8 @@ from enum import Enum
 
 
 class play_event_codes(Enum):
+    wild_pitch = 'WP'
+    passed_ball = 'PB'
     no_play = 'NP'
     intentional_walk = 'IW'
     walk = 'W'
@@ -68,8 +70,6 @@ class fielding_error_event_codes(Enum):
     error_LF = 'E7'
     error_CF = 'E8'
     error_RF = 'E9'
-    wild_pitch = 'WP'
-    passed_ball = 'PB'
     error_on_foul_fly = 'FLE' #$
     error_on_foul_fly_P = 'FLE1'
     error_on_foul_fly_C = 'FLE2'
@@ -114,7 +114,7 @@ class base_hit_event_codes(Enum):
     triple_to_CF = 'T8'
     triple_to_RF = 'T9'
     home_run = 'HR'
-    homerun = 'H' # alt code
+    #homerun = 'H' # alt code
     inside_the_park_home_run = 'IPHR'
 
 

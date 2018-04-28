@@ -106,7 +106,14 @@ class play_record(record):
         num_plays = 0
         print('Inning: {} of the {} | {} |'.format('bottom' if self.is_home else 'top', self.inning, self.player_id))
         print(self.play_results)
-        play = self.play_results
+        play = self.play_results            
+        play_type = retrosheet_codes.get_event_code(play, retrosheet_codes.play_event_codes)
+        if play_type != None: print(play_type._name_)
+        if (play_type == retrosheet_codes.play_event_codes.no_play):
+            print('No play was made')
+            self.runs_scored = 0
+            self.outs_made = 0
+            return
         desc = [] #descriptors
         if ('/' in play):
             _tokens = play.split('/')
@@ -114,27 +121,28 @@ class play_record(record):
                 play = _tokens[0]
                 desc = _tokens[1:]
         print(play, desc)
-
+        
+        # error event:
+        error_event = retrosheet_codes.get_event_code(play, retrosheet_codes.fielding_error_event_codes)
+        print(error_event._name_ if error_event != None else '')
 
         hit = retrosheet_codes.get_event_code(play, retrosheet_codes.base_hit_event_codes)
-        loc = None
+        loc = retrosheet_codes.get_event_code(play, retrosheet_codes.location_codes)
         batted_type = None
-        if (hit != None):
-            loc = retrosheet_codes.get_event_code(play, retrosheet_codes.location_codes)
+        if (hit != None or loc != None):
             batted_type = retrosheet_codes.get_event_code(play, retrosheet_codes.batted_ball_type)
             print ('{} hits a {} into {} for a {}'.format(self.player_id, 
                                                           batted_type._name_ if batted_type != None else '', 
                                                           loc._name_ if loc != None else '', 
                                                           hit._name_ if hit != None else ''))
             self.base_hit = True
-                
-        play_type = retrosheet_codes.get_event_code(play, retrosheet_codes.play_event_codes)
-        if play_type != None: print(play_type._name_)
+            
         if (play_type == retrosheet_codes.play_event_codes.walk or 
         play_type == retrosheet_codes.play_event_codes.intentional_walk or
-        play_type == retrosheet_codes.play_event_codes.hit_by_pitch):
+        play_type == retrosheet_codes.play_event_codes.hit_by_pitch ):
             print('{} reaches base on a {}'.format(self.player_id, play_type._name_))
-        else:
+            self.outs_made = 0
+        elif (loc != None):
             out_type = retrosheet_codes.get_event_code(play, retrosheet_codes.out_play_event_codes)
             if play.isdigit() or play.replace('(','').replace(')','').isdigit():
                 for m in desc:
@@ -160,9 +168,9 @@ class play_record(record):
                 self.outs_made = 0
         print('{} outs were made on this play'.format(self.outs_made))
 
-        if '.' in self.play_results:
-            _plays = self.play_results.split('.')
-            for tok in _plays:
+        if '.' in desc:
+            br = desc.split('.')
+            for tok in br:
                 advances = tok.split(';')
                 for adv in advances:
                     if ('-' in adv):
