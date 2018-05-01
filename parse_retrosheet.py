@@ -1,32 +1,6 @@
 
 from enum import Enum
-
-class pitchres(Enum):
-    # pitch result
-    called_strike = 'C'
-    swinging_strike = 'S'
-    ball = 'B'
-    foul = 'F'
-    pickoff_first = '1'
-    pickoff_second = '2'
-    pickoff_third = '3'
-    foul_bunt = 'L'
-    missed_bunt = 'M'
-    swinging_strike_pitchout = 'Q'
-    foul_pitchout = 'R'
-    intentional_ball = 'I'
-    pitchout = 'P'
-    hit_by_pitch = 'H'
-    strike = 'K'
-    unknown = 'U'
-    in_play = 'X'
-    in_play_pitchout = 'Y'
-
-class pitchres_mod(Enum):
-    # these are modifiers that come after the pitch result
-    catcher_pickoff = '+'
-    catcher_blocked_pitch = '*'
-    runner_going = '>'
+import retrosheet_codes
 
 
 class fpos(Enum):
@@ -119,121 +93,165 @@ class play_record(record):
         self.count = list(self._values[3])
         self.pitch_results = list(self._values[4])
         self.play_results = self._values[5] #(self._values[5].split(',')) # should not contain commas! this might be a bug in the EVN sheet
+        self.runs_scored = -1 # uninitialized
+        self.outs_made = -1
+        self.errors = []
+        self.base_runner_adv = []
+        self.base_hit = False
+        #self.parse_play_results()
 
-    class play_event_codes(Enum):
-        '''
-        AP    appeal play
-        BP    pop up bunt
-        BG    ground ball bunt
-        BGDP  bunt grounded into double play
-        BINT  batter interference
-        BL    line drive bunt
-        BOOT  batting out of turn
-        BP    bunt pop up
-        BPDP  bunt popped into double play
-        BR    runner hit by batted ball
-        C     called third strike
-        COUB  courtesy batter
-        COUF  courtesy fielder
-        COUR  courtesy runner
-        DP    unspecified double play
-        E$    error on $
-        F     fly
-        FDP   fly ball double play
-        FINT  fan interference
-        FL    foul
-        FO    force out
-        G     ground ball
-        GDP   ground ball double play
-        GTP   ground ball triple play
-        IF    infield fly rule
-        INT   interference
-        IPHR  inside the park home run
-        L     line drive
-        LDP   lined into double play
-        LTP   lined into triple play
-        MREV  manager challenge of call on the field
-        NDP   no double play credited for this play
-        OBS   obstruction (fielder obstructing a runner)
-        P     pop fly
-        PASS  a runner passed another runner and was called out
-        R$    relay throw from the initial fielder to $ with no out made
-        RINT  runner interference
-        SF    sacrifice fly
-        SH    sacrifice hit (bunt)
-        TH    throw
-        TH%   throw to base %
-        TP    unspecified triple play
-        UINT  umpire interference
-        UREV  umpire review of call on the field
-        '''
-        home_run = 'HR'
-        no_play = 'NP'
-        bunt_ground_ball = 'BG'
-        bunt_popup = 'BP'
-        sacrifice_fly = 'SF'
-        force_out = 'FO'
-        sacrifice_hit = 'SH'
-        ground_ball = 'G'
-        line_drive = 'L'
-        popup = 'P'
-        fly_ball = 'F'
-        error = 'E' #$
-        strikeout = 'K'
-        wild_pitch = 'WP'
-        passed_ball = 'PB'
-        intentional_walk = 'IW'
-        walk = 'W'
-        stolen_base = 'SB'
-        appeal_play ='AP'
-        bunt_ground_ball_double_play = 'BGDP'
-        batter_interference = 'BINT'
-        bunt_line_drive = 'BL'
-        batting_out_of_turn = 'BOOT'
-        bunt_popup_double_play = 'BPDP'
-        runner_hit_by_batted_ball = 'BR'
-        called_3rd_strike = 'C'
-        courtesy_batter = 'COUB'
-        courtesy_fielder = 'COUF'
-        courtesy_runner = 'COUR'
-        double_play = 'DP' #unspecified
-        fly_ball_double_play = 'FDP'
-        fan_interference = 'FINT'
-        foul = 'FL'
-        ground_ball_double_play = 'GDP'
-        ground_ball_triple_play = 'GTP'
-        infield_fly_rule = 'IF'
-        interference = 'INT' #unspecified
-        inside_the_park_home_run = 'IPHR'
-        lined_into_double_play = 'LDP'
-        lined_into_triple_play = 'LTP'
-        manager_review = 'MREV'
-        no_double_play = 'NDP'
-        obstruction = 'OBS'
-        runner_pass_out = 'PASS'
-        relay_throw = 'R' #$
-        runner_interference = 'RINT'
-        throw = 'TH' #%
-        triple_play = 'TP' #unspecified
-        umpire_interference = 'UINT'
-        umpire_reivew = 'UREV'
-        defensive_interference = 'DI'
+    @staticmethod
+    def parse_modifiers(play, mod='/'):
+        if mod not in play:
+            return play
+        list_play = play.split(mod)
+        for i, elmt in enumerate(list_play):
+            #list_play[i] = elmt
+            #elmt = list_play[i]
+            #for j, desc in enumerate(elmt):
+            if (('(' in elmt) and (')' in elmt)):
+                parse_paren = elmt
+                #results = []
+                tmp = []
+                while ('(' in parse_paren) and (')' in parse_paren):
+                    #tmp = []
+                    _open = parse_paren.find('(')
+                    _close = parse_paren.find(')')+1
+                    if (_open == -1 or _close == -1):
+                        print('Warning: could not complete parentheses')
+                        break
+                    tmp.append(parse_paren[:_open])
+                    tmp.append(parse_paren[_open:_close])
+                    _next = parse_paren.find('(',_close)
+                    tmp.append(parse_paren[_close:_next if _next != -1 else len(parse_paren)])
+                    for n, e in enumerate(tmp):
+                        tmp[n] = play_record.parse_modifiers(e)
+                    #tmp.append(tmp)
+                    parse_paren = parse_paren[_close+1:]
+                list_play[i] = tmp
+            else:
+                for c in ';./': # this needs to be in a certain order. '/' describes hits; '.' describes baserunning advances; ';' describes multiple advances. In backwards order
+                    if (c in elmt):
+                        list_play[i] = list(play_record.parse_modifiers(elmt, c))
+            #list_play[i] = elmt
 
+
+        return list_play
 
     def parse_play_results(self):
-        codes = []
-        for code in play_record.play_event_codes:
-            codes.append(code)
-        codes.sort(key = lambda s: len(s.value), reverse=True)
-        bFound = False
-        for code in codes:
-            #print('----{}'.format(code._name_))
-            if code.value in self.play_results:
-                print (self.play_results, code._name_)
-                bFound = True
-                break
-        if not bFound:
-            print ("Could not find a matching code for play: '{}'".format(self.play_results))
+        num_plays = 0
+        print('Inning: {} of the {} | {} |'.format('bottom' if self.is_home else 'top', self.inning, self.player_id))
+        print(self.play_results)
+
+        parsed_results = play_record.parse_modifiers(self.play_results)
+        print(parsed_results)
+
+        #play = self.play_results
+        #for play in parsed_results:
+        #    play_type = retrosheet_codes.get_event_code(play, retrosheet_codes.play_event_codes)
+        #    if play_type != None: print(play_type._name_)
+        #    if (play_type == retrosheet_codes.play_event_codes.no_play):
+        #        print('No play was made')
+        #        self.runs_scored = 0
+        #        self.outs_made = 0
+        #        return
+        #    desc = [] #descriptors
+        #    if ('/' in play):
+        #        _tokens = play.split('/')
+        #        if (len(_tokens) > 1):
+        #            play = _tokens[0]
+        #            desc = _tokens[1:]
+        #    print(play, desc)
+        
+        #    # error event:
+        #    error_event = retrosheet_codes.get_event_code(play, retrosheet_codes.fielding_error_event_codes)
+        #    if error_event != None:
+        #        print('error(s) made: {}'.format(error_event._name_))
+
+        #    hit = retrosheet_codes.get_event_code(play, retrosheet_codes.base_hit_event_codes)
+        #    loc = retrosheet_codes.get_event_code(play, retrosheet_codes.location_codes)
+        #    batted_type = None
+        #    if (hit != None or loc != None):
+        #        batted_type = retrosheet_codes.get_event_code(play, retrosheet_codes.batted_ball_type)
+        #        print ('{} hits a {} into {} for a {}'.format(self.player_id, 
+        #                                                      batted_type._name_ if batted_type != None else '', 
+        #                                                      loc._name_ if loc != None else '', 
+        #                                                      hit._name_ if hit != None else ''))
+        #        self.base_hit = True
+        #        self.outs_made = 0
+            
+        #    if (play_type == retrosheet_codes.play_event_codes.walk or 
+        #    play_type == retrosheet_codes.play_event_codes.intentional_walk or
+        #    play_type == retrosheet_codes.play_event_codes.hit_by_pitch ):
+        #        print('{} reaches base on a {}'.format(self.player_id, play_type._name_))
+        #        self.outs_made = 0
+        #    elif (play_type == retrosheet_codes.out_play_event_codes.strikeout):
+        #        print('{} was struck out'.format(self.player_id, play_type._name_))
+        #        self.outs_made = 1
+        #    elif (loc != None):
+        #        out_type = retrosheet_codes.get_event_code(play, retrosheet_codes.out_play_event_codes)
+        #        if play.isdigit() or play.replace('(','').replace(')','').isdigit():
+        #            for m in desc:
+        #                out_type = retrosheet_codes.get_event_code(m, retrosheet_codes.out_play_event_codes)
+        #                if out_type != None: 
+        #                    break        
+        #        if hit == None and out_type == None: #this might happen for a simple ground out where only the batted ball type is recorded
+        #            self.outs_made = 1
+        #            for m in desc:
+        #                batted_type = retrosheet_codes.get_event_code(m, retrosheet_codes.batted_ball_type)
+        #                if batted_type != None: 
+        #                    break
+        #            print('{} - {}: play made by {}'.format(self.player_id, batted_type._name_ if batted_type != None else '', play))
+        #        elif out_type != None:
+        #            if ((out_type.value != 'NTP') and ('triple_play' in out_type._name_.lower())):
+        #                self.outs_made = 3
+        #            elif ((out_type.value != 'NDP') and ('double_play' in out_type._name_.lower())):
+        #                self.outs_made = 2
+        #            else:
+        #                self.outs_made = 1
+        #            print('{} - {}: play {}'.format(self.player_id, out_type._name_, play))            
+        #        else:
+        #            self.outs_made = 0
+        #    print('{} outs were made on this play'.format(self.outs_made))
+
+        #    if '.' in desc:
+        #        br = desc.split('.')
+        #        for tok in br:
+        #            advances = tok.split(';')
+        #            for adv in advances:
+        #                if ('-' in adv):
+        #                    runner, base = adv.split('-')
+        #                    if runner == 'B': runner = "batter's box"
+        #                    if runner == '1': runner = 'first'
+        #                    elif runner == '2': runner = 'second'
+        #                    elif runner == '3': runner = 'third'                                
+        #                    if base == '1': base = 'first'
+        #                    elif base == '2': base = 'second'
+        #                    elif base == '3': base = 'third'
+        #                    elif base == 'H': base = 'home'
+        #                    print ('Runner at {} advances to {} base'.format(runner, base))
+
+        #for code in retrosheet_codes.all_plays_sorted:
+        #    if code.value in self.play_results:
+        #        num_plays += 1
+
+        #        if code in retrosheet_codes.out_play_event_codes:
+        #        else:
+        #            # unknown type. possibly an error
+        #            self.outs_made = 0
+
+        #        if '/' in self.play_results:
+        #            tokens = self.play_results.split('/')
+        #            print(tokens)
+
+
+            
+        #        break
+
+        #if num_plays == 0: #not bFound:
+        #    print ("Could not find a matching code for play: '{}'".format(self.play_results))
+        #elif num_plays > 1:
+        #    print ('----------------multiple matches for play')
         
 class sub_record(record):
     def __init__(self, tokens = []):
