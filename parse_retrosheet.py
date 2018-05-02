@@ -101,12 +101,9 @@ class play_record(record):
         #self.parse_play_results()
 
     @staticmethod
-    def parse_modifiers(play):        
-        play = 'WP.2-H(E2/TH)(NR)'
-        #paren_idxes = []
+    def parse_modifiers(play):
+        #play = 'S8/G.1-2'
         desckeys = ';./'
-        #if (('(' in play) and (')' in play)):
-        
         def between_parens(s, chr):
             if chr not in s:
                 return False
@@ -117,18 +114,19 @@ class play_record(record):
                 o,c = p
                 if s.find(chr) in range(o, c):
                     return True
-            return False
-            
+            return False            
         def parse_token(_play, tkn='/'):
-            lp = [_play]
-            if not between_parens(_play, tkn):
-                lp = _play.split(tkn, 1)
+            lp = None
+            for _tkn in desckeys:
+                if _tkn in _play and not between_parens(_play, _tkn):
+                    lp = _play.split(_tkn, 1)
+                    break
+            if lp == None: return [_play]
             for n, l in enumerate(lp):
                 for c in desckeys:
                     if c in l and not between_parens(l, c):
                         lp[n] = parse_token(l, c)
-            return lp
-        
+            return lp        
         def parse_parentheses(_lp):
             if len(_lp) > 0:
                 for i, p in enumerate(_lp):
@@ -154,112 +152,9 @@ class play_record(record):
                     else:
                         continue
             return _lp
-
-
-        #list_play = []
-        #for c in desckeys:
-        #    if c in play and not between_parens(play.find(c)):
-        #        list_play = play.split(c, 1)
-        #        break
-
         list_play = parse_token(play)
         list_play = parse_parentheses(list_play)
-
-        #list_play = [play]
-        #if '(' in play and ')' in play:
-        #    list_play = [play]
-        #else:
-        #list_play = parse_token(play)
-
-        #for n, l in enumerate(list_play):
-        #    if ('(' in l) and (')' not in l):
-        #        #_list = list_play[n:n+2]
-        #        list_play[n:n+2] = ['{}/{}'.format(*list_play[n:n+2])]
-        #        print(list_play)
-        #    elif (')' in l) and ('(' not in l) and (n > 0):
-        #        #_list = list_play[n-1:n+1]
-        #        list_play[n-1:n+1] = ['{}/{}'.format(*list_play[n-1:n+1])]
-        #        print(list_play)
-        #if len(list_play) == 1:
-        #    list_play = list_play[0]
-        #list_play = []
-
-        #lastidx = 0
-        #for i, c in enumerate(play):
-        #    for d in desckeys:
-        #        if c == d:
-        #            if not between_parens(i):
-        #                list_play.append(play[lastidx:i])
-        #                lastidx = i
-        #            else:
-        #                continue
-        #list_play.append(play[lastidx:len(play)])
-
         return list_play
-
-        #if mod not in play:
-        #    return play
-
-
-            #for d in '.;/':
-            #    n = play.find(d)
-            #    if (n != -1):
-            #        nidxes = [i for (i, a) in enumerate(play) if a == d]
-            #        for p in idxes:
-            #            o,c = p
-            #            if (n in range(o, c)):
-            #                print('{} has char {}'.format(play[o:c], d))
-
-
-        #for i, elmt in enumerate(list_play):
-        #    for c in ';./': # this needs to be in a certain order.  '/' describes hits; '.' describes
-        #                    # baserunning advances; ';' describes multiple advances.  In backwards order
-        #        if (c in elmt):
-        #            list_play[i] = list(elmt.split(c, 1))
-
-        #list_play = []
-        #if (('(' in play) and (')' in play)):
-        #    parse_paren = play                
-        #    tmp = []
-        #    while ('(' in parse_paren) and (')' in parse_paren):                    
-        #        _open = parse_paren.find('(')
-        #        _close = parse_paren.find(')')
-        #        if (_open == -1 or _close == -1) or (_open > _close):
-        #            print('Warning: could not complete parentheses')
-        #            break
-        #        _str_open = parse_paren[:_open]
-        #        if (_str_open != ''):
-        #            tmp.append(_str_open)
-        #        tmp.append(parse_paren[_open + 1:_close])
-        #        #list_play.append(parse_paren[_close+1:])
-        #        #_next = parse_paren.find('(',_close)
-        #        #_str_next = parse_paren[_close+1:_next if _next != -1 else
-        #        #len(parse_paren)]
-        #        #if _str_next != '':
-        #        #    list_play.append(_str_next)
-        #        for n, e in enumerate(list_play):
-        #            tmp[n] = play_record.parse_modifiers(e)                    
-        #        parse_paren = parse_paren[_close + 1:]
-        #    list_play += (tmp)
-        #    if (parse_paren != ''):
-        #        list_play.append(parse_paren)
-        #else:
-
-
-        #if (play.count(mod) > 1):
-        #    print(play)
-        #found = True
-        #while (found):
-        #    found = False
-        #    for i, elmt in enumerate(list_play):
-        #        if (mod in elmt):
-        #            list_play[i] = play.split(mod, 1)
-        #            found = True
-            #else:
-        #if len(list_play) == 1:
-        #    return list_play[0]
-        #else:
-        #    return list_play
 
     def parse_play_results(self):
         num_plays = 0
@@ -268,6 +163,18 @@ class play_record(record):
 
         parsed_results = play_record.parse_modifiers(self.play_results)
         print(parsed_results)
+
+        def parse_group(_group, depth=0):
+            for i, elmt in enumerate(_group):
+                if type(elmt) is list:
+                    parse_group(elmt, depth+1)
+                elif type(elmt) is str:
+                    print('{}{}'.format((''.join('|---' for _ in range(0, depth))), elmt))
+
+        parse_group(parsed_results)
+        
+
+
 
         #play = self.play_results
         #for play in parsed_results:
