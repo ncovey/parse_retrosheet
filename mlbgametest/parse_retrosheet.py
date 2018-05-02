@@ -1,58 +1,9 @@
 
 from enum import Enum
 import retrosheet_codes
+from retrosheet_codes import fielding_position_codes as fpos
 import re
 
-class fpos(Enum):
-    # fielding position
-    invalid = 0
-    P = 1
-    C = 2
-    B1 = 3 #1B
-    B2 = 4 #2B
-    B3 = 5 #3B
-    SS = 6
-    LF = 7
-    CF = 8
-    RF = 9
-    DH = 10
-    # for subs
-    PH = 11
-    PR = 12
-    @staticmethod
-    def ntofpos(n):
-        for pos in fpos:
-            if n == pos.value:
-                return pos
-    @staticmethod
-    def getname(fp):
-        if (fp in fpos):
-            if (fp == fpos.P):
-                return 'Pitcher'
-            elif (fp == fpos.C):
-                return 'Catcher'
-            elif (fp == fpos.B1):
-                return 'First Base'
-            elif (fp == fpos.B2):
-                return 'Second Base'
-            elif (fp == fpos.B3):
-                return 'Third Base'
-            elif (fp == fpos.SS):
-                return 'Shortstop'
-            elif (fp == fpos.LF):
-                return 'Left Field'
-            elif (fp == fpos.CF):
-                return 'Center Field'
-            elif (fp == fpos.RF):
-                return 'Right Field'
-            elif (fp == fpos.DH):
-                return 'Designated Hitter'
-            elif (fp == fpos.PH):
-                 return 'Pinch Hitter'
-            elif (fp == fpos.PR):
-                 return 'Pinch Runner'
-        else:
-            return None
 
 class record_type(Enum):
     # record type
@@ -175,9 +126,11 @@ class play_record(record):
                     else:
                         print('unknown code: {}'.format(elmt))
 
+                    # seems like the first element is always used to indicate if a hit or an out was made
+
         parse_group(parsed_results)
         
-
+        retrosheet_codes.play_formats.matches_format(self.play_results)
 
 
         #play = self.play_results

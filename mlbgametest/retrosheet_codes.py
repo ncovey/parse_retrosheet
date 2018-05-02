@@ -2,6 +2,162 @@
 from enum import Enum
 
 
+class fielding_position_codes(Enum):
+    # fielding position
+    invalid = 0
+    P = 1
+    C = 2
+    B1 = 3 #1B
+    B2 = 4 #2B
+    B3 = 5 #3B
+    SS = 6
+    LF = 7
+    CF = 8
+    RF = 9
+    DH = 10
+    # for subs
+    PH = 11
+    PR = 12
+    @staticmethod
+    def ntofpos(n):
+        for pos in fielding_position_codes:
+            if n == pos.value:
+                return pos
+    @staticmethod
+    def getname(fp):
+        if (fp in fielding_position_codes):
+            if (fp == fielding_position_codes.P):
+                return 'Pitcher'
+            elif (fp == fielding_position_codes.C):
+                return 'Catcher'
+            elif (fp == fielding_position_codes.B1):
+                return 'First Base'
+            elif (fp == fielding_position_codes.B2):
+                return 'Second Base'
+            elif (fp == fielding_position_codes.B3):
+                return 'Third Base'
+            elif (fp == fielding_position_codes.SS):
+                return 'Shortstop'
+            elif (fp == fielding_position_codes.LF):
+                return 'Left Field'
+            elif (fp == fielding_position_codes.CF):
+                return 'Center Field'
+            elif (fp == fielding_position_codes.RF):
+                return 'Right Field'
+            elif (fp == fielding_position_codes.DH):
+                return 'Designated Hitter'
+            elif (fp == fielding_position_codes.PH):
+                 return 'Pinch Hitter'
+            elif (fp == fielding_position_codes.PR):
+                 return 'Pinch Runner'
+        else:
+            return None
+
+
+class notation_type(Enum):
+    __invalid = ''
+    single_fielder = '$'
+    several_fielders = '#' # can be one or more
+    baserunner = '%'
+    location = '@'
+    batted_ball_type = '~'
+    unknown_chr = '?'
+    wildcard = '*' # can be one or more
+
+class play_formats(Enum):
+    '''
+    Retrosheet uses a shorthand notation for fielders, baserunners. Let's try and use formatting to parse the event notation
+    $       = fielder (Retrosheet)
+    #       = variable number of fielders (this is my notation)
+    %       = baserunner (Retrosheet)
+    @       = location on field (this is my notation)
+    ~       = batted ball type (this is my notation)
+    ?       = unknown character (this is my notation)
+    *       = unknown string (longer than 1 character)
+
+    (...)   = will look for parentheses in string
+    .../... = will look for forward slash in string
+    .       = will look for period character in string
+    [...]   = to explicitly specify event code possibilities. use ',' to separate. Will NOT look for these literally
+    Any characters not recognized will be looked for literally, and not as codes.
+    '''
+    single = 'S$[/~]'
+    double = 'D$[/~]'
+    triple = 'T$[/~]'
+    error = 'E$[/~]'    
+    out = '#/~@'
+    stolen_base_at = 'SB%'
+    forceout = '#(%)/FO/~@'
+    GDP = '#(%)$/GDP/~'
+    LDP = '$(B)#(%)/LDP/~$'
+    LTP = '$(B)#(%)#(%)/LTP/~$'
+    batter_interference = 'C/[E2,E1,E3]'
+    fielders_choice = 'FC$'
+    error_on_foul_fly = 'FLE$'
+    inside_the_park_home_run = '[HR,H]$/~@'
+    baserunning_event_at = '+[SB,CS,PO]%'
+    baserunning_error_event = '+E$'
+    baserunning_event = '+[OA,PB,WP]'
+    walk_event_at = '[IW,W]+[SB,CS,PO]%'
+    walk_error_event = '[IW,W]+E$'
+    walk_event = '[IW,W]+[PB,WP]'
+    caught_stealing_at = 'CS%($$)'
+    caught_stealing_error = 'CS%($E$)'
+    picked_off_at = 'PO%($$)'
+    pick_off_error = 'PO%(E$)'
+    picked_off_caught_stealing = 'POCS%(#)'
+
+    @staticmethod
+    def matches_format(_events):
+        '''
+        Will return multiple matches if more than one is found.
+        '''
+        matches = []
+        formats = list(play_formats)
+        formats.sort(key = lambda s: len(s.value), reverse=False)
+        notations = list(notation_type)
+    
+        def is_notation_type(_str, ntype):
+            if ntype is notation_type.single_fielder:
+                fielders = list(str(f.value) for f in fielding_position_codes)
+                return _str in fielders
+                #return _str in list(str(f.value) for f in fielding_position_codes) # one-liner(?)
+            elif ntype is notation_type.several_fielders:
+                fielders = list(str(f.value) for f in fielding_position_codes)
+                for f in _str:
+                    if f not in fielders:
+                        return False
+                return True
+                #return True if (f for f in _str) in list(fpos.value for fpos in fielding_position_codes) else False # one-liner(?)
+            elif ntype is notation_type.baserunner:
+                runners = list(br.value for br in baserunner_codes)
+                return _str in runners
+            elif ntype is notation_type.location:
+                return _str in sorted_locations
+            elif ntype is notation_type.batted_ball_type:
+                return _str in sorted_batted_ball_types
+            elif ntype is notation_type.unknown_chr:
+                return len(_str) == 1
+            elif ntype is notation_type.wildcard:
+                return True
+            else:
+                return False
+
+        for i, _ in enumerate(_events):
+            s = _events[i:] # need to step through the string since the match could be anywhere
+            print(s)
+            for _frmt in formats:
+                print('{}\t|\t{}'.format(_frmt.value, _frmt._name_))
+                for j, tkn in enumerate(_frmt.value):
+                    for n in notations:
+                        if tkn == n.value:
+                            print(tkn, n.value)
+                    for c in s:
+                        if c == tkn:
+                            print(c, tkn, _frmt._name_)
+        return matches
+
+
 class play_event_codes(Enum):
     wild_pitch = 'WP'
     passed_ball = 'PB'
@@ -50,10 +206,12 @@ class play_event_codes(Enum):
     no_rbi_credited = 'NR'
     no_rbi_credited = 'NORBI'
     hit_by_pitch = 'HP'
+    balk = 'BK'
 
 
-class batted_ball_type(Enum):    
+class batted_ball_type(Enum):
     bunt_ground_ball = 'BG'
+    bunt_popup = 'BP'
     ground_ball = 'G'
     fly_ball = 'F'
     line_drive = 'L'
@@ -116,6 +274,7 @@ class base_hit_event_codes(Enum):
     home_run = 'HR'
     #homerun = 'H' # alt code
     inside_the_park_home_run = 'IPHR'
+    double_ground_rule = 'DGP'
 
 
 class out_play_event_codes(Enum):
@@ -172,6 +331,17 @@ class baserunner_advances(Enum):
     second_to_H = '2-H'
     third_to_home = '3-H'
     
+class baserunner_codes(Enum):
+    '''
+    These are usually surrounded by () for outs
+    '''
+    batter = 'B'
+    runner_from_1B = '1'
+    runner_from_2B = '2'
+    runner_from_3B = '3'
+
+#class baserunning_events(Enum) =
+
 
 class location_codes(Enum):
     _1 = '1'
