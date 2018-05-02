@@ -160,17 +160,17 @@ class out_play_event_codes(Enum):
     runner_put_out_at_H = 'XH'
 
 
-#class baserunner_advances(Enum):
-#    bbox_to_1B = 'B-1'
-#    bbox_to_2B = 'B-2'
-#    bbox_to_3B = 'B-3'
-#    bbox_to_H = 'B-H' #'IPHR' is more likely to be used here
-#    first_to_2B = '1-2'
-#    first_to_3B = '1-3'
-#    first_to_H = '1-H'
-#    second_to_3B = '2-3'
-#    second_to_H = '2-H'
-#    third_to_home = '3-H'
+class baserunner_advances(Enum):
+    bbox_to_1B = 'B-1'
+    bbox_to_2B = 'B-2'
+    bbox_to_3B = 'B-3'
+    bbox_to_H = 'B-H' #'IPHR' is more likely to be used here
+    first_to_2B = '1-2'
+    first_to_3B = '1-3'
+    first_to_H = '1-H'
+    second_to_3B = '2-3'
+    second_to_H = '2-H'
+    third_to_home = '3-H'
     
 
 class location_codes(Enum):
@@ -252,22 +252,31 @@ sorted_base_hit_codes = list(base_hit_event_codes)
 sorted_base_hit_codes.sort(key = lambda s: len(s.value), reverse=True)
 sorted_error_codes = list(fielding_error_event_codes)
 sorted_error_codes.sort(key = lambda s: len(s.value), reverse=True)
-        
+
+sorted_batted_ball_types = list(batted_ball_type)
+sorted_batted_ball_types.sort(key = lambda s: len(s.value), reverse=True)
+sorted_baserunner_advances = list(baserunner_advances)
+sorted_baserunner_advances.sort(key = lambda s: len(s.value), reverse=True)
+
+sorted_locations = list(location_codes)
+sorted_locations.sort(key = lambda s: len(s.value), reverse=True)
+
 all_plays_sorted = []
 all_plays_sorted += sorted_play_codes
 all_plays_sorted += sorted_out_play_codes
 all_plays_sorted += sorted_base_hit_codes
 all_plays_sorted += sorted_error_codes
+all_plays_sorted += sorted_batted_ball_types
+all_plays_sorted += sorted_baserunner_advances
+all_plays_sorted += sorted_locations
 all_plays_sorted.sort(key = lambda s: len(s.value), reverse=True)
 
-sorted_locations = list(location_codes)
-sorted_locations.sort(key = lambda s: len(s.value), reverse=True)
 
 
 #@staticmethod
-def get_event_code(_events, type):
+def get_event_code(_events, type=None):
     if _events == '': return None
-    if type is play_event_codes:
+    if type is None:
         for code in all_plays_sorted:
             if code.value in _events:
                 return code

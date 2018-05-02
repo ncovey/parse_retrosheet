@@ -103,7 +103,7 @@ class play_record(record):
     @staticmethod
     def parse_modifiers(play):
         #play = 'S8/G.1-2'
-        desckeys = ';./'
+        desckeys = '/.;'
         def between_parens(s, chr):
             if chr not in s:
                 return False
@@ -168,8 +168,12 @@ class play_record(record):
             for i, elmt in enumerate(_group):
                 if type(elmt) is list:
                     parse_group(elmt, depth+1)
-                elif type(elmt) is str:
-                    print('{}{}'.format((''.join('|---' for _ in range(0, depth))), elmt))
+                elif type(elmt) is str:                    
+                    evt = retrosheet_codes.get_event_code(elmt)
+                    if evt != None:
+                        print('{}{}\t{}'.format((''.join('|---' for _ in range(0, depth))), elmt, evt._name_))
+                    else:
+                        print('unknown code: {}'.format(elmt))
 
         parse_group(parsed_results)
         
