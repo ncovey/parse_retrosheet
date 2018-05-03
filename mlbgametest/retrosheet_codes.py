@@ -1,7 +1,7 @@
 
-from enum import Enum
+from enum import Enum, unique
 
-
+@unique
 class fielding_position_codes(Enum):
     # fielding position
     invalid = 0
@@ -25,35 +25,26 @@ class fielding_position_codes(Enum):
                 return pos
     @staticmethod
     def getname(fp):
-        if (fp in fielding_position_codes):
-            if (fp == fielding_position_codes.P):
-                return 'Pitcher'
-            elif (fp == fielding_position_codes.C):
-                return 'Catcher'
-            elif (fp == fielding_position_codes.B1):
-                return 'First Base'
-            elif (fp == fielding_position_codes.B2):
-                return 'Second Base'
-            elif (fp == fielding_position_codes.B3):
-                return 'Third Base'
-            elif (fp == fielding_position_codes.SS):
-                return 'Shortstop'
-            elif (fp == fielding_position_codes.LF):
-                return 'Left Field'
-            elif (fp == fielding_position_codes.CF):
-                return 'Center Field'
-            elif (fp == fielding_position_codes.RF):
-                return 'Right Field'
-            elif (fp == fielding_position_codes.DH):
-                return 'Designated Hitter'
-            elif (fp == fielding_position_codes.PH):
-                 return 'Pinch Hitter'
-            elif (fp == fielding_position_codes.PR):
-                 return 'Pinch Runner'
+        if (fp in fielding_position_codes and fp is not fielding_position_codes.invalid):
+            fpos_map = {
+                fielding_position_codes.P:'Pitcher',
+                fielding_position_codes.C:'Catcher',
+                fielding_position_codes.B1:'First Base',
+                fielding_position_codes.B2:'Second Base',
+                fielding_position_codes.B3:'Third Base',
+                fielding_position_codes.SS:'Shortstop',
+                fielding_position_codes.LF:'Left Field',
+                fielding_position_codes.CF:'Center Field',
+                fielding_position_codes.RF:'Right Field',
+                fielding_position_codes.DH:'Designated Hitter',
+                fielding_position_codes.PH:'Pinch Hitter',
+                fielding_position_codes.PR:'Pinch Runner',
+            }
+            return fpos_map[fp]
         else:
             return None
 
-
+@unique
 class notation_type(Enum):
     __invalid = ''
     single_fielder = '$'
@@ -64,6 +55,11 @@ class notation_type(Enum):
     unknown_chr = '?'
     wildcard = '*' # can be one or more
 
+    @staticmethod
+    def get_char_to_type(_char):
+        return next((n for n in notation_type if n.value == _char), None)
+
+@unique
 class play_formats(Enum):
     '''
     Retrosheet uses a shorthand notation for fielders, baserunners. Let's try and use formatting to parse the event notation
@@ -78,13 +74,13 @@ class play_formats(Enum):
     (...)   = will look for parentheses in string
     .../... = will look for forward slash in string
     .       = will look for period character in string
-    [...]   = to explicitly specify event code possibilities. use ',' to separate. Will NOT look for these literally
+    [...]   = to explicitly specify event code possibilities. use ',' to separate. Will NOT look for these literally. End list with a comma if you want to specify that these tokens might not exist.
     Any characters not recognized will be looked for literally, and not as codes.
     '''
-    single = 'S$[/~]'
-    double = 'D$[/~]'
-    triple = 'T$[/~]'
-    error = 'E$[/~]'    
+    single = 'S$[/~,]'
+    double = 'D$[/~,]'
+    triple = 'T$[/~,]'
+    error = 'E$[/~,]'    
     out = '#/~@'
     stolen_base_at = 'SB%'
     forceout = '#(%)/FO/~@'
@@ -143,21 +139,50 @@ class play_formats(Enum):
             else:
                 return False
 
+
         for i, _ in enumerate(_events):
             s = _events[i:] # need to step through the string since the match could be anywhere
             print(s)
+            format_res = []
             for _frmt in formats:
-                print('{}\t|\t{}'.format(_frmt.value, _frmt._name_))
+                #print('{}\t|\t{}'.format(_frmt.value, _frmt._name_))
+                bFound = False
                 for j, tkn in enumerate(_frmt.value):
-                    for n in notations:
-                        if tkn == n.value:
-                            print(tkn, n.value)
-                    for c in s:
-                        if c == tkn:
-                            print(c, tkn, _frmt._name_)
+                    if j < len(s):
+                        cand_char = s[j]
+                        #if (tkn == '['):
+                        ntype = notation_type.get_char_to_type(tkn)
+                        if ntype is not None:
+                            #print('looking at "{}" in "{}"'.format(cand_char, s))                        
+                            #print('comparing against type: {}[{}] in {}'.format(ntype.value, j, _frmt.value))
+                            if is_notation_type(cand_char, ntype):
+                                print('notation comparision: "{}"[{}] matches with "{}"[{}]. "{}" is of type: {} ({})'.format(s, j, _frmt.value, j, cand_char, ntype._name_, tkn))
+                                bFound = True
+                            else:
+                                bFound = False
+                                break
+                        elif ntype is None: # char literal
+                            if tkn == cand_char:
+                                print('literal comparison: "{}"[{}] matches with "{}"[{}]. char="{}"'.format(s, j, _frmt.value, j, tkn))
+                                bFound = True
+                            else:
+                                if (bFound is True):
+                                    print('literal comparison: "{}"[{}] failed to match with "{}"[{}]. chars= [{}]!=[{}]'.format(s, j, _frmt.value, j, cand_char, tkn))
+                                bFound = False
+                                break
+                    #else:
+                        #print('reached past end of "{}"'.format(s))
+                    
+                if bFound is True:
+                    print('"{}" seems to match with "{}"'.format(_frmt.value, s))
+                    format_res.append(_frmt)
+            if len(format_res) > 0:
+                matches += format_res
+
         return matches
 
 
+@unique
 class play_event_codes(Enum):
     wild_pitch = 'WP'
     passed_ball = 'PB'
@@ -209,6 +234,7 @@ class play_event_codes(Enum):
     balk = 'BK'
 
 
+@unique
 class batted_ball_type(Enum):
     bunt_ground_ball = 'BG'
     bunt_popup = 'BP'
@@ -216,7 +242,7 @@ class batted_ball_type(Enum):
     fly_ball = 'F'
     line_drive = 'L'
 
-
+@unique
 class fielding_error_event_codes(Enum):
     error = 'E' #$
     error_P = 'E1'
@@ -240,6 +266,7 @@ class fielding_error_event_codes(Enum):
     error_on_foul_fly_RF = 'FLE9'
     
 
+@unique
 class base_hit_event_codes(Enum):
     single = 'S' #$
     single_to_P = 'S1'
@@ -277,6 +304,7 @@ class base_hit_event_codes(Enum):
     double_ground_rule = 'DGP'
 
 
+@unique
 class out_play_event_codes(Enum):
     bunt_popup = 'BP'
     sacrifice_fly = 'SF'
@@ -319,6 +347,7 @@ class out_play_event_codes(Enum):
     runner_put_out_at_H = 'XH'
 
 
+@unique
 class baserunner_advances(Enum):
     bbox_to_1B = 'B-1'
     bbox_to_2B = 'B-2'
@@ -331,6 +360,7 @@ class baserunner_advances(Enum):
     second_to_H = '2-H'
     third_to_home = '3-H'
     
+@unique
 class baserunner_codes(Enum):
     '''
     These are usually surrounded by () for outs
@@ -343,6 +373,7 @@ class baserunner_codes(Enum):
 #class baserunning_events(Enum) =
 
 
+@unique
 class location_codes(Enum):
     _1 = '1'
     _15 = '15'
@@ -478,6 +509,7 @@ def get_event_code(_events, type=None):
         return None
     
 
+@unique
 class pitchres(Enum):
     # pitch result
     called_strike = 'C'
@@ -499,6 +531,7 @@ class pitchres(Enum):
     in_play = 'X'
     in_play_pitchout = 'Y'
 
+@unique
 class pitchres_mod(Enum):
     # these are modifiers that come after the pitch result
     catcher_pickoff = '+'
