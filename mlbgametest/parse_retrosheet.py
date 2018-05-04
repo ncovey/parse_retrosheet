@@ -3,7 +3,7 @@ from enum import Enum
 import retrosheet_codes
 from retrosheet_codes import fielding_position_codes as fpos
 import re
-
+import sys
 
 class record_type(Enum):
     # record type
@@ -109,8 +109,8 @@ class play_record(record):
 
     def parse_play_results(self):
         num_plays = 0
-        print('Inning: {} of the {} | {} |'.format('bottom' if self.is_home else 'top', self.inning, self.player_id))
-        print(self.play_results)
+        #print('Inning: {} of the {} | {} |'.format('bottom' if self.is_home else 'top', self.inning, self.player_id))
+        #print(self.play_results)
 
         #parsed_results = play_record.parse_modifiers(self.play_results)
         #print(parsed_results)
@@ -129,8 +129,7 @@ class play_record(record):
                     # seems like the first element is always used to indicate if a hit or an out was made
 
         #parse_group(parsed_results)
-        
-        retrosheet_codes.play_formats.matches_format(self.play_results)
+        results = retrosheet_codes.play_formats.matches_format(self.play_results)
 
 
         #play = self.play_results

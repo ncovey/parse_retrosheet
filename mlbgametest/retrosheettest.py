@@ -1,4 +1,5 @@
 
+import sys
 import os
 import time
 from parse_retrosheet import *
@@ -49,27 +50,27 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
     for n, play in enumerate(game.plays):
         if (play.is_home != is_home):
             if (outs < 3 and is_home != None):
-                print('Warning! -less- than 3 outs recorded!')
+                pass #print('Warning! -less- than 3 outs recorded!')
             elif (outs > 3 and is_home != None):
-                print('Warning! +more+ than 3 outs recorded!')
+                pass #print('Warning! +more+ than 3 outs recorded!')
             outs = 0
             is_home = play.is_home
         if (hasattr(play, 'inning') and play.inning != inning):
             inning = play.inning
-        print ('=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))
+        #print ('=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))
         if play._type == rt.play.value:
             play.parse_play_results()
             if (play.outs_made != -1):
                 outs += play.outs_made
-                print('>    outs: {}'.format(outs))
+                #print('>    outs: {}'.format(outs))
             else:
-                print('Warning! could not determine number of outs made!')
+                pass #print('Warning! could not determine number of outs made!')
         if play._type == rt.sub.value:
-            print('{} replaces {} for {} team, batting {}'.format(play.player_id, fpos.getname(play.sub_field_pos), 'home' if play.is_home else 'away', play.batting_order))
+            #print('{} replaces {} for {} team, batting {}'.format(play.player_id, fpos.getname(play.sub_field_pos), 'home' if play.is_home else 'away', play.batting_order))
             if play.sub_field_pos == fpos.P:
-                print('pitcher replaced')
+                pass #print('pitcher replaced')
             if play.sub_field_pos == fpos.C:
-                print('catcher replaced')    
+                pass #print('catcher replaced')    
     #            if nprev_play != -1:
     #                print (game.plays[nprev_play].inning)
                     
@@ -147,3 +148,4 @@ def main():
 
 if __name__=="__main__":
     main()
+        
