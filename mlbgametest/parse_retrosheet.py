@@ -112,23 +112,23 @@ class play_record(record):
         print('Inning: {} of the {} | {} |'.format('bottom' if self.is_home else 'top', self.inning, self.player_id))
         print(self.play_results)
 
-        parsed_results = play_record.parse_modifiers(self.play_results)
-        print(parsed_results)
+        #parsed_results = play_record.parse_modifiers(self.play_results)
+        #print(parsed_results)
 
-        def parse_group(_group, depth=0):
-            for i, elmt in enumerate(_group):
-                if type(elmt) is list:
-                    parse_group(elmt, depth+1)
-                elif type(elmt) is str:                    
-                    evt = retrosheet_codes.get_event_code(elmt)
-                    if evt != None:
-                        print('{}{}\t{}'.format((''.join('|---' for _ in range(0, depth))), elmt, evt._name_))
-                    else:
-                        print('unknown code: {}'.format(elmt))
+        #def parse_group(_group, depth=0):
+        #    for i, elmt in enumerate(_group):
+        #        if type(elmt) is list:
+        #            parse_group(elmt, depth+1)
+        #        elif type(elmt) is str:                    
+        #            evt = retrosheet_codes.get_event_code(elmt)
+        #            if evt != None:
+        #                print('{}{}\t{}'.format((''.join('|---' for _ in range(0, depth))), elmt, evt._name_))
+        #            else:
+        #                print('unknown code: {}'.format(elmt))
 
                     # seems like the first element is always used to indicate if a hit or an out was made
 
-        parse_group(parsed_results)
+        #parse_group(parsed_results)
         
         retrosheet_codes.play_formats.matches_format(self.play_results)
 
