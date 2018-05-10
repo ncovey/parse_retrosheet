@@ -129,6 +129,8 @@ class play_record(record):
                     # seems like the first element is always used to indicate if a hit or an out was made
 
         #parse_group(parsed_results)
+        #results = retrosheet_codes.play_formats.matches_format("S8/L.2-H;1-3")
+        #results = retrosheet_codes.play_formats.matches_format("K")
         results = retrosheet_codes.play_formats.matches_format(self.play_results)
 
 

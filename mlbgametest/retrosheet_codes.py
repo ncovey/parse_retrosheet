@@ -75,10 +75,7 @@ class play_formats(Enum):
     ?       = unknown character (this is my notation)
     *       = unknown string (longer than 1 character)
 
-    (...)   = will look for parentheses in string
-    .../... = will look for forward slash in string
-    .       = will look for period character in string
-    [...]   = to explicitly specify event code possibilities. use ',' to separate. Will NOT look for these literally. End list with a comma if you want to specify that these tokens might not exist.
+    [..., ..., ...]   = to explicitly specify event code possibilities. use ',' to separate. Can look for literals or notation. End list with a comma if you want to specify that these tokens might not exist.
     Any characters not recognized will be looked for literally, and not as codes.
     '''
     single = 'S$[/~,]'
@@ -109,22 +106,21 @@ class play_formats(Enum):
     picked_off_caught_stealing = 'POCS%(#)'
     strikeout_fielding_play = 'K#'
     
-    _walk = 'W'
-    _intentional_walk = 'IW'
-    _wild_pitch = 'WP'
-    _strikeout = 'K'
-    _hit_by_pitch = 'HP'
-    _home_run = 'HR'
-    _no_play = 'NP'
-    _passed_ball = 'PB'
-    _defensive_indifference = 'DI'
-    _out_ambiguous = 'OA'
-    _caught_stealing = 'CS'
-    _ground_rule_double = 'DGR'
-    _stolen_base = 'SB'
-    _picked_off = 'PO'
-    _balk = 'BK'
-    _line_drive_bunt = 'BL'
+    walk = 'W'
+    intentional_walk = 'IW'
+    wild_pitch = 'WP'
+    strikeout = 'K'
+    hit_by_pitch = 'HP'
+    home_run = 'HR'
+    no_play = 'NP'
+    passed_ball = 'PB'
+    defensive_indifference = 'DI'
+    out_ambiguous = 'OA'
+    caught_stealing = 'CS'
+    ground_rule_double = 'DGR'
+    stolen_base = 'SB'
+    balk = 'BK'
+    line_drive_bunt = 'BL'
 
 
 
@@ -133,10 +129,6 @@ class play_formats(Enum):
         '''
         Will return multiple matches if more than one is found.
         '''
-        matches = []
-        formats = list(play_formats)
-        formats.sort(key = lambda s: len(s.value), reverse=False)
-        notations = list(notation_type)
     
         def is_code_at_str_idx(code, _string, _start_index):
             _begin, _end = _start_index, _start_index+len(code)
@@ -145,6 +137,7 @@ class play_formats(Enum):
             #return False
 
         def is_notation_type(ntype, _str, _start_index=0):
+            #print('|> {} "{}" [{}]'.format(ntype, _str, _start_index))
             if ntype is notation_type.single_fielder:
                 fielders = list(str(f.value) for f in fielding_position_codes)
                 for f in fielders:
@@ -158,8 +151,13 @@ class play_formats(Enum):
                         if (is_code_at_str_idx(fielder, _str, _start_index + n)):
                             bFound = True
                             break
-                    if (not bFound):
-                        return n
+                        else:
+                            bFound = False
+                    if (bFound == False):
+                        if (n == 0): # first item was invalid, need to return -1 to indicate no matches
+                            return -1
+                        else:
+                            return n
                 return -1
             elif ntype is notation_type.baserunner:
                 runners = list(br.value for br in baserunner_codes)
@@ -186,6 +184,7 @@ class play_formats(Enum):
                 s = _string[i:] # need to step through the string since the match could be anywhere
                 bFound = False
                 _string_itr = 0
+                match_string = '' # sequence of characters that matches the format string
                 for j, tkn in enumerate(_frmt):
                     if _string_itr < len(s):
                         cand_char = s[_string_itr]
@@ -195,11 +194,12 @@ class play_formats(Enum):
                             #print('ntype={}'.format(ntype._name_))
                             #print('looking at "{}" in "{}"'.format(cand_char, s))
                             #print('comparing against type: {}[{}] in {}'.format(ntype.value, j, _frmt))
-                            notatlen = is_notation_type(ntype, _string, _string_itr)
+                            notatlen = is_notation_type(ntype, s, _string_itr)
                             if notatlen != -1:
-                                #print('MATCH! notation comparision: "{}"[{}] matches with "{}"[{}]. "{}" is of type: {} ({})'.format(s, _string_itr, _frmt, j, _string[_string_itr:notatlen + _string_itr], ntype._name_, tkn))
+                                #print('MATCH! notation comparision: "{}"[{}] matches with "{}"[{}]. "{}" is of type: {} ({})'.format(s, _string_itr, _frmt, j, s[_string_itr:notatlen + _string_itr], ntype._name_, tkn))
                                 bFound = True
                                 _string_itr += notatlen
+                                match_string = s[:_string_itr]
                             else:
                                 #print('FAILURE! notation comparision: "{}"[{}] does not match with "{}"[{}]. "{}" is NOT of type: {} ({})'.format(s, _string_itr, _frmt, j, cand_char, ntype._name_, tkn))
                                 bFound = False
@@ -209,18 +209,20 @@ class play_formats(Enum):
                                 #print('MATCH! char="{} \t|\t literal comparison: "{}"[{}] matches with "{}"[{}]."'.format(tkn, s, _string_itr, _frmt, j))
                                 bFound = True
                                 _string_itr += 1
+                                match_string = s[:_string_itr]
                             else:
                                 #print('FAILURE! "{}" != "{}" \t|\t literal comparison: "{}"[{}] failed to match with "{}"[{}].'.format(cand_char, tkn, s, _string_itr, _frmt, j))
                                 bFound = False
                                 break
                         #print('_string_itr = {}'.format(_string_itr))
                     else:
-                        #print('reached past end of "{}". "{}" is longer than event string.'.format(s, _frmt))
-                        pass
+                        #print('reached past end of "{}". Format "{}" is longer than event string.'.format(s, _frmt))
+                        bFound = False
                 if bFound is True:
-                    #print('"{}" seems to match with "{}"'.format(_frmt, _string))
-                    break
-            return bFound
+                    #print('"{}" seems to match with "{}" in "{}"'.format(_frmt, match_string, s))
+                    return match_string
+
+            return ''
 
         def enumerate_bracket_options(format):
             if '[' in format and ']' in format:
@@ -231,10 +233,15 @@ class play_formats(Enum):
                     if chr == '[' or chr == ']':
                         brkt_splits.append(format[last_n if format[last_n-1] != '[' else last_n-1:n if chr != ']' else n+1])
                         last_n = n + 1
+                if len(format[last_n:]) > 0:
+                    brkt_splits.append(format[last_n:])
                 list_option_lists = []
                 for split in brkt_splits:
                     if ('[' in split and ']' in split):
-                        list_option_lists.append(split.replace('[','').replace(']','').split(','))                
+                        list_option_lists.append(split.replace('[','').replace(']','').split(','))
+                for i, split in enumerate(brkt_splits):
+                    brkt_splits[i] = split.strip()
+                brkt_splits = filter(None, brkt_splits)
                 where_brkts = [n for n, _ in enumerate(brkt_splits) if ('[' in _ and ']' in _)]
                 options_list = list(itertools.product(*list_option_lists))                
                 for options in options_list:
@@ -245,6 +252,7 @@ class play_formats(Enum):
                         if '[' not in split and ']' not in split:
                             new_format += split
                         else:
+                            #print(options, option_itr)
                             new_format += options[option_itr]
                             option_itr += 1
                     option_strings.append(new_format)
@@ -252,33 +260,45 @@ class play_formats(Enum):
             else:
                 return []
 
+
+
+        matches = []
+        formats = list(play_formats)
+        formats.sort(key = lambda s: len(s.value), reverse=False)
         format_res = []
         for _frmt in formats:
             format = _frmt.value
             #print('evaluating "{}"'.format(format))
             if '[' in format and ']' in format:                
                 options = enumerate_bracket_options(format)
+                options.sort(key = lambda s: len(s), reverse=False)
                 for opt_str in options:
                     #print('evaluating option "{}" in format: "{}" ({})'.format(opt_str, _frmt.value, _frmt._name_))
-                    if (compare_string_to_format(_events, opt_str)):
+                    match_string = compare_string_to_format(_events, opt_str)
+                    if match_string != '':
                         #print('Detected: {} "{}" in play: {}.'.format(_frmt._name_, opt_str, _events))
-                        format_res.append(opt_str)
+                        format_res.append((_frmt, opt_str, match_string))
             else:
-                bFound = compare_string_to_format(_events, format)
-                if (bFound == True):
+                match_string = compare_string_to_format(_events, format)
+                if match_string != '':
                     #print('Detected: {} "{}" in play: {}.'.format(_frmt._name_, format, _events))
-                    format_res.append(_frmt)
+                    format_res.append((_frmt, format, match_string))
         if len(format_res) > 0:
             matches += format_res
 
         if len(matches) == 0:
             print('Could not find a matching play type for: {} !'.format(_events))
-            pass
         else:
-            #print('matching formats for "{}": {}'.format(_events, matches))
-            #for match in matches:
-            #    print('{}'.format(match._name_))
-            pass
+            print('matching formats for "{}":'.format(_events))
+            for match in matches:
+                print('{}'.format(match))
+
+            for match in matches:
+                for _m in matches:
+                    if _m[2] in match[2] and _m is not match:
+                        print('{} is in {}. This is a duplicate.'.format(_m[2], match[2]))
+                        if match[2].count(_m[2]) > 1:
+                            print('more than one instance!!')
 
         return matches
 
