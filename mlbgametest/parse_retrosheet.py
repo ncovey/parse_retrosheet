@@ -130,7 +130,8 @@ class play_record(record):
 
         #parse_group(parsed_results)
         #results = retrosheet_codes.play_formats.matches_format("S8/L.2-H;1-3")
-        #results = retrosheet_codes.play_formats.matches_format("K")
+        #results = retrosheet_codes.play_formats.matches_format("9/F9LF")
+        #results = retrosheet_codes.play_formats.matches_format("K23")
         results = retrosheet_codes.play_formats.matches_format(self.play_results)
 
 

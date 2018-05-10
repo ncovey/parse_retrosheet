@@ -47,7 +47,6 @@ class fielding_position_codes(Enum):
 
 @unique
 class notation_type(Enum):
-    __invalid = ''
     single_fielder = '$'
     several_fielders = '#' # can be one or more
     baserunner = '%'
@@ -63,6 +62,7 @@ class notation_type(Enum):
             if n.value == _char:
                 return n
 
+
 @unique
 class play_formats(Enum):
     '''
@@ -75,8 +75,9 @@ class play_formats(Enum):
     ?       = unknown character (this is my notation)
     *       = unknown string (longer than 1 character)
 
-    [..., ..., ...]   = to explicitly specify event code possibilities. use ',' to separate. Can look for literals or notation. End list with a comma if you want to specify that these tokens might not exist.
+    [..., ..., ...] = to explicitly specify event code possibilities. use ',' to separate. Can look for literals or notation. End list with a comma if you want to specify that these tokens might not exist.
     Any characters not recognized will be looked for literally, and not as codes.
+    {..., ..., ...} = to explicitly specify strings that would indicate that this is NOT of this play format type.
     '''
     single = 'S$[/~,]'
     double = 'D$[/~,]'
@@ -106,22 +107,31 @@ class play_formats(Enum):
     picked_off_caught_stealing = 'POCS%(#)'
     strikeout_fielding_play = 'K#'
     
-    walk = 'W'
-    intentional_walk = 'IW'
-    wild_pitch = 'WP'
-    strikeout = 'K'
-    hit_by_pitch = 'HP'
-    home_run = 'HR'
-    no_play = 'NP'
-    passed_ball = 'PB'
-    defensive_indifference = 'DI'
-    out_ambiguous = 'OA'
-    caught_stealing = 'CS'
-    ground_rule_double = 'DGR'
-    stolen_base = 'SB'
-    balk = 'BK'
-    line_drive_bunt = 'BL'
+    baserunning_advances = '[.,;]%-%'
 
+    #walk = 'W'
+    #intentional_walk = 'IW'
+    #wild_pitch = 'WP'
+    #strikeout = 'K'
+    #hit_by_pitch = 'HP'
+    #home_run = 'HR'
+    #no_play = 'NP'
+    #passed_ball = 'PB'
+    #defensive_indifference = 'DI'
+    #out_ambiguous = 'OA'
+    #caught_stealing = 'CS'
+    #ground_rule_double = 'DGR'
+    #stolen_base = 'SB'
+    #balk = 'BK'
+    #line_drive_bunt = 'BL'
+
+    
+    #class play(object):
+    #    def __init__(self):
+    #        self.fielders = []
+    #        self.baserunners = []
+    #        self.location = None
+    #        self.batted_ball = None
 
 
     @staticmethod
@@ -131,10 +141,7 @@ class play_formats(Enum):
         '''
     
         def is_code_at_str_idx(code, _string, _start_index):
-            _begin, _end = _start_index, _start_index+len(code)
-            #if _end < len(_string):
-            return  _string[_begin:_end] == code
-            #return False
+            return _string[_start_index:_start_index+len(code)] == code
 
         def is_notation_type(ntype, _str, _start_index=0):
             #print('|> {} "{}" [{}]'.format(ntype, _str, _start_index))
@@ -145,20 +152,21 @@ class play_formats(Enum):
                         return len(f)
             elif ntype is notation_type.several_fielders:
                 fielders = list(str(f.value) for f in fielding_position_codes)
+                n_itr = -1
                 for n, f in enumerate(_str[_start_index:]):
+                    bFound = False
                     for fielder in fielders:
-                        bFound = False
                         if (is_code_at_str_idx(fielder, _str, _start_index + n)):
                             bFound = True
+                            n_itr = n + 1
                             break
                         else:
                             bFound = False
                     if (bFound == False):
                         if (n == 0): # first item was invalid, need to return -1 to indicate no matches
                             return -1
-                        else:
-                            return n
-                return -1
+                        return n_itr
+                return n_itr
             elif ntype is notation_type.baserunner:
                 runners = list(br.value for br in baserunner_codes)
                 for r in runners:
@@ -176,6 +184,7 @@ class play_formats(Enum):
                 return 1 # doesn't matter
             elif ntype is notation_type.wildcard:
                 return 0 # might need special return value
+
             return -1
 
 
@@ -224,32 +233,32 @@ class play_formats(Enum):
 
             return ''
 
-        def enumerate_bracket_options(format):
-            if '[' in format and ']' in format:
+        def enumerate_bracket_options(format, _obrkt='[', _cbrkt=']'):
+            if _obrkt in format and _cbrkt in format:
                 option_strings = []
                 brkt_splits = []
                 last_n = 0
                 for n, chr in enumerate(format):
-                    if chr == '[' or chr == ']':
-                        brkt_splits.append(format[last_n if format[last_n-1] != '[' else last_n-1:n if chr != ']' else n+1])
+                    if chr == _obrkt or chr == _cbrkt:
+                        brkt_splits.append(format[last_n if format[last_n-1] != _obrkt else last_n-1:n if chr != _cbrkt else n+1])
                         last_n = n + 1
                 if len(format[last_n:]) > 0:
                     brkt_splits.append(format[last_n:])
                 list_option_lists = []
                 for split in brkt_splits:
-                    if ('[' in split and ']' in split):
-                        list_option_lists.append(split.replace('[','').replace(']','').split(','))
+                    if (_obrkt in split and _cbrkt in split):
+                        list_option_lists.append(split.replace(_obrkt,'').replace(_cbrkt,'').split(','))
                 for i, split in enumerate(brkt_splits):
                     brkt_splits[i] = split.strip()
                 brkt_splits = filter(None, brkt_splits)
-                where_brkts = [n for n, _ in enumerate(brkt_splits) if ('[' in _ and ']' in _)]
+                where_brkts = [n for n, _ in enumerate(brkt_splits) if (_obrkt in _ and _cbrkt in _)]
                 options_list = list(itertools.product(*list_option_lists))                
                 for options in options_list:
                     #print(options)
                     new_format = ''
                     option_itr = 0
                     for i, split in enumerate(brkt_splits):
-                        if '[' not in split and ']' not in split:
+                        if _obrkt not in split and _cbrkt not in split:
                             new_format += split
                         else:
                             #print(options, option_itr)
@@ -287,18 +296,26 @@ class play_formats(Enum):
             matches += format_res
 
         if len(matches) == 0:
-            print('Could not find a matching play type for: {} !'.format(_events))
-        else:
-            print('matching formats for "{}":'.format(_events))
-            for match in matches:
-                print('{}'.format(match))
+            #print('Could not find a matching play type for: {} !'.format(_events))
+            for code in play_event_codes:
+                if code.value in _events:
+                    #print('found "{}" in "{}"'.format(code._name_, _events))
+                    matches.append((code, '', code.value))
+            for code in out_play_event_codes:
+                if code.value in _events:
+                    #print('found "{}" in "{}"'.format(code._name_, _events))
+                    matches.append((code, '', code.value))
+        else:            
+            #print('matching formats for "{}":'.format(_events))
+            #for match in matches: print('{}'.format(match))
+            duplicates = [_match for match in matches for _match in matches if _match[2] in match[2] and _match is not match]
+            matches = [m for m in matches if m not in duplicates]
 
-            for match in matches:
-                for _m in matches:
-                    if _m[2] in match[2] and _m is not match:
-                        print('{} is in {}. This is a duplicate.'.format(_m[2], match[2]))
-                        if match[2].count(_m[2]) > 1:
-                            print('more than one instance!!')
+        print('matching formats for "{}":'.format(_events))
+        for match in matches: print('{}'.format(match))
+
+        if len(matches) < 1:
+            print('COULD NOT FIND A MATCH!!!')
 
         return matches
 
@@ -364,66 +381,66 @@ class batted_ball_type(Enum):
     fly_ball = 'F'
     line_drive = 'L'
 
-@unique
-class fielding_error_event_codes(Enum):
-    error = 'E' #$
-    error_P = 'E1'
-    error_C = 'E2'
-    error_1B = 'E3'
-    error_2B = 'E4'
-    error_3B = 'E5'
-    error_SS = 'E6'
-    error_LF = 'E7'
-    error_CF = 'E8'
-    error_RF = 'E9'
-    error_on_foul_fly = 'FLE' #$
-    error_on_foul_fly_P = 'FLE1'
-    error_on_foul_fly_C = 'FLE2'
-    error_on_foul_fly_1B = 'FLE3'
-    error_on_foul_fly_2B = 'FLE4'
-    error_on_foul_fly_3B = 'FLE5'
-    error_on_foul_fly_SS = 'FLE6'
-    error_on_foul_fly_LF = 'FLE7'
-    error_on_foul_fly_CF = 'FLE8'
-    error_on_foul_fly_RF = 'FLE9'
+#@unique
+#class fielding_error_event_codes(Enum):
+#    error = 'E' #$
+#    error_P = 'E1'
+#    error_C = 'E2'
+#    error_1B = 'E3'
+#    error_2B = 'E4'
+#    error_3B = 'E5'
+#    error_SS = 'E6'
+#    error_LF = 'E7'
+#    error_CF = 'E8'
+#    error_RF = 'E9'
+#    error_on_foul_fly = 'FLE' #$
+#    error_on_foul_fly_P = 'FLE1'
+#    error_on_foul_fly_C = 'FLE2'
+#    error_on_foul_fly_1B = 'FLE3'
+#    error_on_foul_fly_2B = 'FLE4'
+#    error_on_foul_fly_3B = 'FLE5'
+#    error_on_foul_fly_SS = 'FLE6'
+#    error_on_foul_fly_LF = 'FLE7'
+#    error_on_foul_fly_CF = 'FLE8'
+#    error_on_foul_fly_RF = 'FLE9'
     
 
-@unique
-class base_hit_event_codes(Enum):
-    single = 'S' #$
-    single_to_P = 'S1'
-    single_to_C = 'S2'
-    single_to_1B = 'S3'
-    single_to_2B = 'S4'
-    single_to_3B = 'S5'
-    single_to_SS = 'S6'
-    single_to_LF = 'S7'
-    single_to_CF = 'S8'
-    single_to_RF = 'S9'
-    double = 'D' #$
-    double_to_P = 'D1'
-    double_to_C = 'D2'
-    double_to_1B = 'D3'
-    double_to_2B = 'D4'
-    double_to_3B = 'D5'
-    double_to_SS = 'D6'
-    double_to_LF = 'D7'
-    double_to_CF = 'D8'
-    double_to_RF = 'D9'
-    triple = 'T' #$
-    triple_to_P = 'T1'
-    triple_to_C = 'T2'
-    triple_to_1B = 'T3'
-    triple_to_2B = 'T4'
-    triple_to_3B = 'T5'
-    triple_to_SS = 'T6'
-    triple_to_LF = 'T7'
-    triple_to_CF = 'T8'
-    triple_to_RF = 'T9'
-    home_run = 'HR'
-    #homerun = 'H' # alt code
-    inside_the_park_home_run = 'IPHR'
-    double_ground_rule = 'DGP'
+#@unique
+#class base_hit_event_codes(Enum):
+#    single = 'S' #$
+#    single_to_P = 'S1'
+#    single_to_C = 'S2'
+#    single_to_1B = 'S3'
+#    single_to_2B = 'S4'
+#    single_to_3B = 'S5'
+#    single_to_SS = 'S6'
+#    single_to_LF = 'S7'
+#    single_to_CF = 'S8'
+#    single_to_RF = 'S9'
+#    double = 'D' #$
+#    double_to_P = 'D1'
+#    double_to_C = 'D2'
+#    double_to_1B = 'D3'
+#    double_to_2B = 'D4'
+#    double_to_3B = 'D5'
+#    double_to_SS = 'D6'
+#    double_to_LF = 'D7'
+#    double_to_CF = 'D8'
+#    double_to_RF = 'D9'
+#    triple = 'T' #$
+#    triple_to_P = 'T1'
+#    triple_to_C = 'T2'
+#    triple_to_1B = 'T3'
+#    triple_to_2B = 'T4'
+#    triple_to_3B = 'T5'
+#    triple_to_SS = 'T6'
+#    triple_to_LF = 'T7'
+#    triple_to_CF = 'T8'
+#    triple_to_RF = 'T9'
+#    home_run = 'HR'
+#    #homerun = 'H' # alt code
+#    inside_the_park_home_run = 'IPHR'
+#    double_ground_rule = 'DGP'
 
 
 @unique
@@ -432,7 +449,7 @@ class out_play_event_codes(Enum):
     sacrifice_fly = 'SF'
     force_out = 'FO'
     sacrifice_hit = 'SH'
-    popup = 'P'
+    #popup = 'P'
     strikeout = 'K'
     bunt_ground_ball_double_play = 'BGDP'
     bunt_popup_double_play = 'BPDP'
@@ -469,18 +486,18 @@ class out_play_event_codes(Enum):
     runner_put_out_at_H = 'XH'
 
 
-@unique
-class baserunner_advances(Enum):
-    bbox_to_1B = 'B-1'
-    bbox_to_2B = 'B-2'
-    bbox_to_3B = 'B-3'
-    bbox_to_H = 'B-H' #'IPHR' is more likely to be used here
-    first_to_2B = '1-2'
-    first_to_3B = '1-3'
-    first_to_H = '1-H'
-    second_to_3B = '2-3'
-    second_to_H = '2-H'
-    third_to_home = '3-H'
+#@unique
+#class baserunner_advances(Enum):
+#    bbox_to_1B = 'B-1'
+#    bbox_to_2B = 'B-2'
+#    bbox_to_3B = 'B-3'
+#    bbox_to_H = 'B-H' #'IPHR' is more likely to be used here
+#    first_to_2B = '1-2'
+#    first_to_3B = '1-3'
+#    first_to_H = '1-H'
+#    second_to_3B = '2-3'
+#    second_to_H = '2-H'
+#    third_to_home = '3-H'
     
 @unique
 class baserunner_codes(Enum):
@@ -491,6 +508,7 @@ class baserunner_codes(Enum):
     runner_from_1B = '1'
     runner_from_2B = '2'
     runner_from_3B = '3'
+    home_plate = 'H'
 
 #class baserunning_events(Enum) =
 
@@ -571,15 +589,15 @@ sorted_play_codes = list(play_event_codes)
 sorted_play_codes.sort(key = lambda s: len(s.value), reverse=True)
 sorted_out_play_codes = list(out_play_event_codes)
 sorted_out_play_codes.sort(key = lambda s: len(s.value), reverse=True)
-sorted_base_hit_codes = list(base_hit_event_codes)
-sorted_base_hit_codes.sort(key = lambda s: len(s.value), reverse=True)
-sorted_error_codes = list(fielding_error_event_codes)
-sorted_error_codes.sort(key = lambda s: len(s.value), reverse=True)
+#sorted_base_hit_codes = list(base_hit_event_codes)
+#sorted_base_hit_codes.sort(key = lambda s: len(s.value), reverse=True)
+#sorted_error_codes = list(fielding_error_event_codes)
+#sorted_error_codes.sort(key = lambda s: len(s.value), reverse=True)
 
 sorted_batted_ball_types = list(batted_ball_type)
 sorted_batted_ball_types.sort(key = lambda s: len(s.value), reverse=True)
-sorted_baserunner_advances = list(baserunner_advances)
-sorted_baserunner_advances.sort(key = lambda s: len(s.value), reverse=True)
+#sorted_baserunner_advances = list(baserunner_advances)
+#sorted_baserunner_advances.sort(key = lambda s: len(s.value), reverse=True)
 
 sorted_locations = list(location_codes)
 sorted_locations.sort(key = lambda s: len(s.value), reverse=True)
@@ -587,10 +605,10 @@ sorted_locations.sort(key = lambda s: len(s.value), reverse=True)
 all_plays_sorted = []
 all_plays_sorted += sorted_play_codes
 all_plays_sorted += sorted_out_play_codes
-all_plays_sorted += sorted_base_hit_codes
-all_plays_sorted += sorted_error_codes
+#all_plays_sorted += sorted_base_hit_codes
+#all_plays_sorted += sorted_error_codes
 all_plays_sorted += sorted_batted_ball_types
-all_plays_sorted += sorted_baserunner_advances
+#all_plays_sorted += sorted_baserunner_advances
 all_plays_sorted += sorted_locations
 all_plays_sorted.sort(key = lambda s: len(s.value), reverse=True)
 
