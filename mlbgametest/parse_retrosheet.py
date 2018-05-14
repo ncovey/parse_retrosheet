@@ -133,7 +133,29 @@ class play_record(record):
         #results = retrosheet_codes.play_formats.matches_format("9/F9LF")
         #results = retrosheet_codes.play_formats.matches_format("K23")
         results = retrosheet_codes.play_formats.matches_format(self.play_results)
-
+        
+        if len(results) > 0:
+            for res in results:
+                print('"{}" - {} ({})'.format(self.play_results, res[0], res[1]))
+                if \
+                res[0] == retrosheet_codes.play_formats.out or \
+                res[0] == retrosheet_codes.play_formats.forceout or \
+                res[0] == retrosheet_codes.play_formats.fielders_choice or \
+                res[0] == retrosheet_codes.play_formats.caught_stealing_at or \
+                res[0] == retrosheet_codes.play_formats.picked_off_at or \
+                res[0] == retrosheet_codes.play_formats.picked_off_caught_stealing or \
+                res[0] == retrosheet_codes.play_formats.strikeout_fielding_play or \
+                res[0] == retrosheet_codes.play_formats.strikeout or \
+                res[0] == retrosheet_codes.play_formats.out_ambiguous or \
+                res[0] == retrosheet_codes.play_formats.caught_stealing:
+                    self.outs_made = 1
+                elif \
+                res[0] == retrosheet_codes.play_formats.grounded_into_double_play or \
+                res[0] == retrosheet_codes.play_formats.lined_into_double_play:\
+                    self.outs_made = 2
+                elif \
+                res[0] == retrosheet_codes.play_formats.lined_into_triple_play:
+                    self.outs_made = 3
 
         #play = self.play_results
         #for play in parsed_results:

@@ -296,6 +296,7 @@ class play_formats(Enum):
             matches += format_res
 
         if len(matches) == 0:
+<<<<<<< Updated upstream
             #print('Could not find a matching play type for: {} !'.format(_events))
             for code in play_event_codes:
                 if code.value in _events:
@@ -316,6 +317,20 @@ class play_formats(Enum):
 
         if len(matches) < 1:
             print('COULD NOT FIND A MATCH!!!')
+=======
+            print('Could not find a matching play type for: {} !'.format(_events))
+        else:
+            #print('matching formats for "{}":'.format(_events))
+            #for match in matches:
+                #print('{}'.format(match))
+
+            for match in matches:
+                for _m in matches:
+                    if _m[2] in match[2] and _m is not match:
+                        #print('"{}" is in "{}". This is a duplicate.'.format(_m[2], match[2]))
+                        if match[2].count(_m[2]) > 1:
+                            print('more than one instance!!')
+>>>>>>> Stashed changes
 
         return matches
 
