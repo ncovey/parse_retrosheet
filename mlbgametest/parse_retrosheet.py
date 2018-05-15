@@ -83,16 +83,26 @@ class play_record(record):
                 res[0] == retrosheet_codes.play_formats.strikeout_fielding_play or \
                 res[0] == retrosheet_codes.play_formats.strikeout or \
                 res[0] == retrosheet_codes.play_formats.out_ambiguous or \
-                res[0] == retrosheet_codes.play_formats.putout_baserunner or \
-                res[0] == retrosheet_codes.play_formats.caught_stealing:
-                    self.outs_made = 1
+                res[0] == retrosheet_codes.play_formats.line_drive_bunt or \
+                res[0] == retrosheet_codes.play_formats.putout_baserunner:
+                    self.outs_made = 1 if self.outs_made < 1 else self.outs_made
                 elif \
+                res[0] == retrosheet_codes.play_formats.double_play or \
                 res[0] == retrosheet_codes.play_formats.grounded_into_double_play or \
                 res[0] == retrosheet_codes.play_formats.lined_into_double_play:
-                    self.outs_made = 2
+                    self.outs_made = 2 if self.outs_made < 2 else self.outs_made
                 elif \
                 res[0] == retrosheet_codes.play_formats.lined_into_triple_play:
-                    self.outs_made = 3
+                    self.outs_made = 3 if self.outs_made < 3 else self.outs_made
+
+                #if \
+                #res[0] == retrosheet_codes.play_formats.error or \
+                #res[0] == retrosheet_codes.play_formats.error_on_foul_fly or \
+                #res[0] == retrosheet_codes.play_formats.pick_off_error or \
+                #res[0] == retrosheet_codes.play_formats.walk_error_event:
+                #    self.outs_made = 0 #????? how am I supposed to know how many outs??
+                    
+                print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
 
             if self.base_hit == True and not any(res[0] == retrosheet_codes.play_formats.putout_baserunner for res in results) :
                 self.outs_made = -1

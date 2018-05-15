@@ -50,9 +50,9 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
     for n, play in enumerate(game.plays):
         if (play.is_home != is_home) and play._type != rt.sub.value:
             if (outs < 3 and is_home != None):
-                print('Warning! -less- than 3 outs recorded!')
+                print('Warning! -less- than 3 outs detected!')
             elif (outs > 3 and is_home != None):
-                print('Warning! +more+ than 3 outs recorded!')
+                print('Warning! +more+ than 3 outs detected!')
             outs = 0
             is_home = play.is_home
         if (hasattr(play, 'inning') and play.inning != inning):
@@ -64,7 +64,7 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
             #    print('no play')
             if (play.outs_made != -1):
                 outs += play.outs_made
-                print('>    outs: {}'.format(outs))
+                print('[{}]>    outs: {}'.format(play.outs_made, outs))
             #else:
             #    print('Warning! could not determine number of outs made!')
         if play._type == rt.sub.value:

@@ -100,7 +100,7 @@ class play_formats(Enum):
     walk_event_at = '[IW,W]+[SB,CS,PO]%'
     walk_error_event = '[IW,W]+E$'
     walk_event = '[IW,W]+[PB,WP]'
-    caught_stealing_at = 'CS%($$)'
+    caught_stealing_at = 'CS%[($$),]'
     caught_stealing_error = 'CS%($E$)'
     picked_off_at = 'PO%($$)'
     pick_off_error = 'PO%(E$)'
@@ -119,13 +119,14 @@ class play_formats(Enum):
     passed_ball = 'PB'
     defensive_indifference = 'DI'
     out_ambiguous = 'OA'
-    caught_stealing = 'CS'
+    #caught_stealing = 'CS'
     ground_rule_double = 'DGR'
     stolen_base = 'SB'
     balk = 'BK'
     line_drive_bunt = 'BL'
+    double_play = 'DP'
 
-    putout_baserunner = '%X%(#)'
+    putout_baserunner = '%X%(#[/TH,])'
     
     #class play(object):
     #    def __init__(self):
@@ -311,12 +312,12 @@ class play_formats(Enum):
             for code in play_event_codes:
                 idx = _events.find(code.value)
                 if idx != -1:
-                    print('found "{}" in "{} @ ({},{})="{}""'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
+                    #print('found "{}" in "{} @ ({},{})="{}""'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
                     matches.append((code, '', code.value, (idx, len(code.value))))
             for code in out_play_event_codes:
                 idx = _events.find(code.value)
                 if idx != -1:
-                    print('found "{}" in "{}"'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
+                    #print('found "{}" in "{}"'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
                     matches.append((code, '', code.value, (idx, len(code.value))))
         else:            
             #print('matching formats for "{}":'.format(_events))
@@ -337,8 +338,8 @@ class play_formats(Enum):
                                 print('overlap')
 
             
-        print('matching formats for "{}":'.format(_events))
-        for match in matches: print('{}'.format(match))
+        #print('matching formats for "{}":'.format(_events))
+        #for match in matches: print('{}'.format(match))
 
         if len(matches) < 1:
             print('COULD NOT FIND A MATCH!!!')
