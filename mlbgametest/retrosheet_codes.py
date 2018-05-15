@@ -109,22 +109,23 @@ class play_formats(Enum):
     
     baserunning_advances = '[.,;]%-%'
 
-    #walk = 'W'
-    #intentional_walk = 'IW'
-    #wild_pitch = 'WP'
-    #strikeout = 'K'
-    #hit_by_pitch = 'HP'
-    #home_run = 'HR'
-    #no_play = 'NP'
-    #passed_ball = 'PB'
-    #defensive_indifference = 'DI'
-    #out_ambiguous = 'OA'
-    #caught_stealing = 'CS'
-    #ground_rule_double = 'DGR'
-    #stolen_base = 'SB'
-    #balk = 'BK'
-    #line_drive_bunt = 'BL'
+    walk = 'W'
+    intentional_walk = 'IW'
+    wild_pitch = 'WP'
+    strikeout = 'K'
+    hit_by_pitch = 'HP'
+    home_run = 'HR'
+    no_play = 'NP'
+    passed_ball = 'PB'
+    defensive_indifference = 'DI'
+    out_ambiguous = 'OA'
+    caught_stealing = 'CS'
+    ground_rule_double = 'DGR'
+    stolen_base = 'SB'
+    balk = 'BK'
+    line_drive_bunt = 'BL'
 
+    putout_baserunner = '%X%(#)'
     
     #class play(object):
     #    def __init__(self):
@@ -188,8 +189,10 @@ class play_formats(Enum):
             return -1
 
 
-        def compare_string_to_format(_string, _frmt):            
+        def compare_string_to_format(_string, _frmt): 
             for i, _ in enumerate(_string):
+                nbegin = -1
+                nend = -1           
                 s = _string[i:] # need to step through the string since the match could be anywhere
                 bFound = False
                 _string_itr = 0
@@ -207,31 +210,39 @@ class play_formats(Enum):
                             if notatlen != -1:
                                 #print('MATCH! notation comparision: "{}"[{}] matches with "{}"[{}]. "{}" is of type: {} ({})'.format(s, _string_itr, _frmt, j, s[_string_itr:notatlen + _string_itr], ntype._name_, tkn))
                                 bFound = True
+                                if nbegin == -1:
+                                    nbegin = _string_itr + i
                                 _string_itr += notatlen
                                 match_string = s[:_string_itr]
                             else:
                                 #print('FAILURE! notation comparision: "{}"[{}] does not match with "{}"[{}]. "{}" is NOT of type: {} ({})'.format(s, _string_itr, _frmt, j, cand_char, ntype._name_, tkn))
                                 bFound = False
+                                nend =  _string_itr + i
                                 break
                         elif ntype == None: # char literal
                             if tkn == cand_char:
                                 #print('MATCH! char="{} \t|\t literal comparison: "{}"[{}] matches with "{}"[{}]."'.format(tkn, s, _string_itr, _frmt, j))
-                                bFound = True
+                                bFound = True                                
+                                if nbegin == -1:
+                                    nbegin =  _string_itr + i
                                 _string_itr += 1
                                 match_string = s[:_string_itr]
                             else:
                                 #print('FAILURE! "{}" != "{}" \t|\t literal comparison: "{}"[{}] failed to match with "{}"[{}].'.format(cand_char, tkn, s, _string_itr, _frmt, j))
                                 bFound = False
+                                nend =  _string_itr + i
                                 break
                         #print('_string_itr = {}'.format(_string_itr))
+                        nend =  _string_itr + i
                     else:
                         #print('reached past end of "{}". Format "{}" is longer than event string.'.format(s, _frmt))
+                        nend =  _string_itr + i
                         bFound = False
                 if bFound is True:
                     #print('"{}" seems to match with "{}" in "{}"'.format(_frmt, match_string, s))
-                    return match_string
+                    return match_string, nbegin, nend
 
-            return ''
+            return '', -1, -1
 
         def enumerate_bracket_options(format, _obrkt='[', _cbrkt=']'):
             if _obrkt in format and _cbrkt in format:
@@ -283,54 +294,54 @@ class play_formats(Enum):
                 options.sort(key = lambda s: len(s), reverse=False)
                 for opt_str in options:
                     #print('evaluating option "{}" in format: "{}" ({})'.format(opt_str, _frmt.value, _frmt._name_))
-                    match_string = compare_string_to_format(_events, opt_str)
+                    match_string, begin, end = compare_string_to_format(_events, opt_str)
                     if match_string != '':
-                        #print('Detected: {} "{}" in play: {}.'.format(_frmt._name_, opt_str, _events))
-                        format_res.append((_frmt, opt_str, match_string))
+                        #print('Detected: {} "{}" in play: {} @ ({},{})="{}".'.format(_frmt._name_, opt_str, _events, begin, end, _events[begin:end]))
+                        format_res.append((_frmt, opt_str, match_string, (begin, end)))
             else:
-                match_string = compare_string_to_format(_events, format)
+                match_string, begin, end = compare_string_to_format(_events, format)
                 if match_string != '':
-                    #print('Detected: {} "{}" in play: {}.'.format(_frmt._name_, format, _events))
-                    format_res.append((_frmt, format, match_string))
+                    #print('Detected: {} "{}" in play: {} @ ({},{})="{}".'.format(_frmt._name_, format, _events, begin, end, _events[begin:end]))
+                    format_res.append((_frmt, format, match_string, (begin, end)))
         if len(format_res) > 0:
             matches += format_res
 
         if len(matches) == 0:
-<<<<<<< Updated upstream
-            #print('Could not find a matching play type for: {} !'.format(_events))
+            print('Could not find a matching play type for: {} !'.format(_events))
             for code in play_event_codes:
-                if code.value in _events:
-                    #print('found "{}" in "{}"'.format(code._name_, _events))
-                    matches.append((code, '', code.value))
+                idx = _events.find(code.value)
+                if idx != -1:
+                    print('found "{}" in "{} @ ({},{})="{}""'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
+                    matches.append((code, '', code.value, (idx, len(code.value))))
             for code in out_play_event_codes:
-                if code.value in _events:
-                    #print('found "{}" in "{}"'.format(code._name_, _events))
-                    matches.append((code, '', code.value))
+                idx = _events.find(code.value)
+                if idx != -1:
+                    print('found "{}" in "{}"'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
+                    matches.append((code, '', code.value, (idx, len(code.value))))
         else:            
             #print('matching formats for "{}":'.format(_events))
             #for match in matches: print('{}'.format(match))
             duplicates = [_match for match in matches for _match in matches if _match[2] in match[2] and _match is not match]
             matches = [m for m in matches if m not in duplicates]
 
+            if len(matches) > 1:
+                coords = [m[3] for m in matches]
+                for i, iloc in enumerate(coords):
+                    for j, jloc in enumerate(coords):
+                        if (i != j):
+                            ib, ie = iloc
+                            jb, je = jloc
+                            print(iloc, i, _events[ib:ie])
+                            print(jloc, j, _events[jb:je])
+                            if (ie > jb):
+                                print('overlap')
+
+            
         print('matching formats for "{}":'.format(_events))
         for match in matches: print('{}'.format(match))
 
         if len(matches) < 1:
             print('COULD NOT FIND A MATCH!!!')
-=======
-            print('Could not find a matching play type for: {} !'.format(_events))
-        else:
-            #print('matching formats for "{}":'.format(_events))
-            #for match in matches:
-                #print('{}'.format(match))
-
-            for match in matches:
-                for _m in matches:
-                    if _m[2] in match[2] and _m is not match:
-                        #print('"{}" is in "{}". This is a duplicate.'.format(_m[2], match[2]))
-                        if match[2].count(_m[2]) > 1:
-                            print('more than one instance!!')
->>>>>>> Stashed changes
 
         return matches
 
@@ -396,68 +407,6 @@ class batted_ball_type(Enum):
     fly_ball = 'F'
     line_drive = 'L'
 
-#@unique
-#class fielding_error_event_codes(Enum):
-#    error = 'E' #$
-#    error_P = 'E1'
-#    error_C = 'E2'
-#    error_1B = 'E3'
-#    error_2B = 'E4'
-#    error_3B = 'E5'
-#    error_SS = 'E6'
-#    error_LF = 'E7'
-#    error_CF = 'E8'
-#    error_RF = 'E9'
-#    error_on_foul_fly = 'FLE' #$
-#    error_on_foul_fly_P = 'FLE1'
-#    error_on_foul_fly_C = 'FLE2'
-#    error_on_foul_fly_1B = 'FLE3'
-#    error_on_foul_fly_2B = 'FLE4'
-#    error_on_foul_fly_3B = 'FLE5'
-#    error_on_foul_fly_SS = 'FLE6'
-#    error_on_foul_fly_LF = 'FLE7'
-#    error_on_foul_fly_CF = 'FLE8'
-#    error_on_foul_fly_RF = 'FLE9'
-    
-
-#@unique
-#class base_hit_event_codes(Enum):
-#    single = 'S' #$
-#    single_to_P = 'S1'
-#    single_to_C = 'S2'
-#    single_to_1B = 'S3'
-#    single_to_2B = 'S4'
-#    single_to_3B = 'S5'
-#    single_to_SS = 'S6'
-#    single_to_LF = 'S7'
-#    single_to_CF = 'S8'
-#    single_to_RF = 'S9'
-#    double = 'D' #$
-#    double_to_P = 'D1'
-#    double_to_C = 'D2'
-#    double_to_1B = 'D3'
-#    double_to_2B = 'D4'
-#    double_to_3B = 'D5'
-#    double_to_SS = 'D6'
-#    double_to_LF = 'D7'
-#    double_to_CF = 'D8'
-#    double_to_RF = 'D9'
-#    triple = 'T' #$
-#    triple_to_P = 'T1'
-#    triple_to_C = 'T2'
-#    triple_to_1B = 'T3'
-#    triple_to_2B = 'T4'
-#    triple_to_3B = 'T5'
-#    triple_to_SS = 'T6'
-#    triple_to_LF = 'T7'
-#    triple_to_CF = 'T8'
-#    triple_to_RF = 'T9'
-#    home_run = 'HR'
-#    #homerun = 'H' # alt code
-#    inside_the_park_home_run = 'IPHR'
-#    double_ground_rule = 'DGP'
-
-
 @unique
 class out_play_event_codes(Enum):
     bunt_popup = 'BP'
@@ -499,20 +448,6 @@ class out_play_event_codes(Enum):
     runner_put_out_at_2B = 'X2'
     runner_put_out_at_3B = 'X3'
     runner_put_out_at_H = 'XH'
-
-
-#@unique
-#class baserunner_advances(Enum):
-#    bbox_to_1B = 'B-1'
-#    bbox_to_2B = 'B-2'
-#    bbox_to_3B = 'B-3'
-#    bbox_to_H = 'B-H' #'IPHR' is more likely to be used here
-#    first_to_2B = '1-2'
-#    first_to_3B = '1-3'
-#    first_to_H = '1-H'
-#    second_to_3B = '2-3'
-#    second_to_H = '2-H'
-#    third_to_home = '3-H'
     
 @unique
 class baserunner_codes(Enum):
@@ -524,9 +459,6 @@ class baserunner_codes(Enum):
     runner_from_2B = '2'
     runner_from_3B = '3'
     home_plate = 'H'
-
-#class baserunning_events(Enum) =
-
 
 @unique
 class location_codes(Enum):

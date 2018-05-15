@@ -48,7 +48,7 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
     inning = 0
     is_home = None
     for n, play in enumerate(game.plays):
-        if (play.is_home != is_home):
+        if (play.is_home != is_home) and play._type != rt.sub.value:
             if (outs < 3 and is_home != None):
                 print('Warning! -less- than 3 outs recorded!')
             elif (outs > 3 and is_home != None):
@@ -57,27 +57,29 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
             is_home = play.is_home
         if (hasattr(play, 'inning') and play.inning != inning):
             inning = play.inning
-        #print ('=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))
+        print ('\n=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))
         if play._type == rt.play.value:
             play.parse_play_results()
+            #if (retrosheet_codes.play_formats.no_play in play.play_formats):
+            #    print('no play')
             if (play.outs_made != -1):
                 outs += play.outs_made
                 print('>    outs: {}'.format(outs))
-            else:
-                print('Warning! could not determine number of outs made!')
+            #else:
+            #    print('Warning! could not determine number of outs made!')
         if play._type == rt.sub.value:
+            pass # remove this
             #print('{} replaces {} for {} team, batting {}'.format(play.player_id, fpos.getname(play.sub_field_pos), 'home' if play.is_home else 'away', play.batting_order))
-            if play.sub_field_pos == fpos.P:
-                pass #print('pitcher replaced')
-            if play.sub_field_pos == fpos.C:
-                pass #print('catcher replaced')    
+            #if play.sub_field_pos == fpos.P:
+            #    print('pitcher replaced')
+            #if play.sub_field_pos == fpos.C:
+            #    print('catcher replaced')    
     #            if nprev_play != -1:
     #                print (game.plays[nprev_play].inning)
                     
         #else:
 
         #nprev_play = n
-
 
 def main():
 
