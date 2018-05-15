@@ -47,6 +47,7 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
     outs = 0
     inning = 0
     is_home = None
+
     for n, play in enumerate(game.plays):
         if (play.is_home != is_home) and play._type != rt.sub.value:
             if (outs < 3 and is_home != None):

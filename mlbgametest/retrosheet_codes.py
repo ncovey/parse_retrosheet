@@ -74,16 +74,16 @@ class play_formats(Enum):
     ~       = batted ball type (this is my notation)
     ?       = unknown character (this is my notation)
     *       = unknown string (longer than 1 character)
+    !       = if the string can only be at the very beginning of the play
 
     [..., ..., ...] = to explicitly specify event code possibilities. use ',' to separate. Can look for literals or notation. End list with a comma if you want to specify that these tokens might not exist.
     Any characters not recognized will be looked for literally, and not as codes.
-    {..., ..., ...} = to explicitly specify strings that would indicate that this is NOT of this play format type.
     '''
     single = 'S$[/~,]'
     double = 'D$[/~,]'
     triple = 'T$[/~,]'
-    error = '[$,]E$[/~,]'    
-    out = '#/[~,@,~@]'
+    error = '[$,]E$[/~,/TH,]'    
+    out = '!#/[~,@,~@]'
     stolen_base_at = 'SB%'
     forceout = '#(%)/FO[/~,]'
     grounded_into_double_play = '#(%)#[(%),]/[~,]DP[/~,]'
@@ -119,7 +119,6 @@ class play_formats(Enum):
     passed_ball = 'PB'
     defensive_indifference = 'DI'
     out_ambiguous = 'OA'
-    #caught_stealing = 'CS'
     ground_rule_double = 'DGR'
     stolen_base = 'SB'
     balk = 'BK'
@@ -127,6 +126,7 @@ class play_formats(Enum):
     double_play = 'DP'
 
     putout_baserunner = '%X%(#[/TH,])'
+    strikeout_error_event = 'K+E$[/TH,]' #maybe not necessary to specify baserunning events
     
     #class play(object):
     #    def __init__(self):
@@ -192,13 +192,16 @@ class play_formats(Enum):
 
         def compare_string_to_format(_string, _frmt): 
             for i, _ in enumerate(_string):
+                bAtBegin = _frmt[0] == '!'
                 nbegin = -1
-                nend = -1           
+                nend = -1
                 s = _string[i:] # need to step through the string since the match could be anywhere
                 bFound = False
                 _string_itr = 0
                 match_string = '' # sequence of characters that matches the format string
                 for j, tkn in enumerate(_frmt):
+                    if j == 0 and bAtBegin:
+                        continue
                     if _string_itr < len(s):
                         cand_char = s[_string_itr]
                         ntype = notation_type.get_char_to_type(tkn)
@@ -239,10 +242,12 @@ class play_formats(Enum):
                         #print('reached past end of "{}". Format "{}" is longer than event string.'.format(s, _frmt))
                         nend =  _string_itr + i
                         bFound = False
+                # end of loop:
                 if bFound is True:
                     #print('"{}" seems to match with "{}" in "{}"'.format(_frmt, match_string, s))
                     return match_string, nbegin, nend
-
+                elif bAtBegin:
+                    break
             return '', -1, -1
 
         def enumerate_bracket_options(format, _obrkt='[', _cbrkt=']'):
@@ -325,21 +330,25 @@ class play_formats(Enum):
             duplicates = [_match for match in matches for _match in matches if _match[2] in match[2] and _match is not match]
             matches = [m for m in matches if m not in duplicates]
 
+            #remove format matches that overlap one another
             if len(matches) > 1:
                 coords = [m[3] for m in matches]
-                for i, iloc in enumerate(coords):
-                    for j, jloc in enumerate(coords):
-                        if (i != j):
-                            ib, ie = iloc
-                            jb, je = jloc
-                            print(iloc, i, _events[ib:ie])
-                            print(jloc, j, _events[jb:je])
-                            if (ie > jb):
-                                print('overlap')
-
+                for r in coords:
+                    rb, re = r
+                    xs = set(range(rb,re))
+                    for n, y in enumerate(coords):
+                        if y is not r:
+                            yb, ye = y
+                            xy = xs.intersection(range(yb,ye))
+                            if len(xy) > 0:
+                                #print('{} ^ {} = {} '.format(xs, y, xy))
+                                #print('{} {}'.format(_events[rb:re], _events[yb:ye]))
+                                matches = [m for m in matches if m[3] != y]
+                                coords.remove(y)
+                                break
             
-        #print('matching formats for "{}":'.format(_events))
-        #for match in matches: print('{}'.format(match))
+        print('matching formats for "{}":'.format(_events))
+        for match in matches: print('{}'.format(match))
 
         if len(matches) < 1:
             print('COULD NOT FIND A MATCH!!!')

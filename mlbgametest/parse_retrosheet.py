@@ -57,13 +57,13 @@ class play_record(record):
         num_plays = 0
         #results = retrosheet_codes.play_formats.matches_format("S8/L.2-H;1-3")
         #results = retrosheet_codes.play_formats.matches_format("9/F9LF")
-        #results = retrosheet_codes.play_formats.matches_format("K23")
+        #results = retrosheet_codes.play_formats.matches_format("K+E2/TH.2-3;B-1")
         results = retrosheet_codes.play_formats.matches_format(self.play_results)
         
         if len(results) > 0:
             for res in results:
                 self.play_formats.append(res[0])
-                print('"{}" - {} ({})'.format(self.play_results, res[0], res[1]))
+                #print('"{}" - {} ({})'.format(self.play_results, res[0], res[1]))
 
                 if \
                 res[0] == retrosheet_codes.play_formats.single or \
@@ -76,7 +76,6 @@ class play_record(record):
                 if \
                 res[0] == retrosheet_codes.play_formats.out or \
                 res[0] == retrosheet_codes.play_formats.forceout or \
-                res[0] == retrosheet_codes.play_formats.fielders_choice or \
                 res[0] == retrosheet_codes.play_formats.caught_stealing_at or \
                 res[0] == retrosheet_codes.play_formats.picked_off_at or \
                 res[0] == retrosheet_codes.play_formats.picked_off_caught_stealing or \
@@ -95,12 +94,12 @@ class play_record(record):
                 res[0] == retrosheet_codes.play_formats.lined_into_triple_play:
                     self.outs_made = 3 if self.outs_made < 3 else self.outs_made
 
-                #if \
-                #res[0] == retrosheet_codes.play_formats.error or \
-                #res[0] == retrosheet_codes.play_formats.error_on_foul_fly or \
-                #res[0] == retrosheet_codes.play_formats.pick_off_error or \
-                #res[0] == retrosheet_codes.play_formats.walk_error_event:
-                #    self.outs_made = 0 #????? how am I supposed to know how many outs??
+                if \
+                res[0] == retrosheet_codes.play_formats.error_on_foul_fly or \
+                res[0] == retrosheet_codes.play_formats.pick_off_error or \
+                res[0] == retrosheet_codes.play_formats.strikeout_error_event or \
+                res[0] == retrosheet_codes.play_formats.walk_error_event:
+                    self.outs_made -= 1 if self.outs_made > 0 else 0 #????? how am I supposed to know how many outs??
                     
                 print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
 
