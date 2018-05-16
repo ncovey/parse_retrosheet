@@ -83,11 +83,11 @@ class play_formats(Enum):
     double = 'D$[/~,]'
     triple = 'T$[/~,]'
     error = '[$,]E$[/~,/TH,]'    
-    out = '!#/[~,@,~@]'
+    out = '!#/[~,@,~@,SH/~,]'
     stolen_base_at = 'SB%'
     forceout = '#(%)/FO[/~,]'
     grounded_into_double_play = '#(%)#[(%),]/[~,]DP[/~,]'
-    
+    grounded_into_triple_play = '#(%)#(%)#[(%),(%)#,]/GTP[/~,]'    
     lined_into_double_play = '$(B)#(%)/LDP/~$'
     lined_into_triple_play = '$(B)#(%)#(%)/LTP/~$'
     batter_interference = 'C/[E2,E1,E3]'
@@ -126,7 +126,9 @@ class play_formats(Enum):
     double_play = 'DP'
 
     putout_baserunner = '%X%(#[/TH,])'
-    strikeout_error_event = 'K+E$[/TH,]' #maybe not necessary to specify baserunning events
+    strikeout_error_event = 'K+E$[/TH,]'
+    strikeout_wild_pitch = 'K+WP*[B-%,]'
+    strikeout_passed_ball = 'K+PB*[B-%,]'
     
     #class play(object):
     #    def __init__(self):
@@ -438,26 +440,6 @@ class out_play_event_codes(Enum):
     lined_into_double_play = 'LDP'
     lined_into_triple_play = 'LTP'
     runner_passed = 'PASS'
-    caught_stealing = 'CS' #%
-    caught_stealing_1B = 'CS1' # I don't think this is possible
-    caught_stealing_2B = 'CS2'
-    caught_stealing_3B = 'CS3'
-    caught_stealing_H = 'CSH'
-    fielders_choice = 'FC' #$ - fielder first fielding the ball
-    fielders_choice_P = 'FC1'
-    fielders_choice_C = 'FC2'
-    fielders_choice_1B = 'FC3'
-    fielders_choice_2B = 'FC4'
-    fielders_choice_3B = 'FC5'
-    fielders_choice_SS = 'FC6'
-    fielders_choice_LF = 'FC7'
-    fielders_choice_CF = 'FC8'
-    fielders_choice_RF = 'FC9'
-    runner_put_out = 'X' # %X%($...$)
-    runner_put_out_at_1B = 'X1'
-    runner_put_out_at_2B = 'X2'
-    runner_put_out_at_3B = 'X3'
-    runner_put_out_at_H = 'XH'
     
 @unique
 class baserunner_codes(Enum):

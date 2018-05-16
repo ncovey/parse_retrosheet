@@ -55,10 +55,12 @@ class play_record(record):
 
     def parse_play_results(self):
         num_plays = 0
-        #results = retrosheet_codes.play_formats.matches_format("S8/L.2-H;1-3")
-        #results = retrosheet_codes.play_formats.matches_format("9/F9LF")
-        #results = retrosheet_codes.play_formats.matches_format("K+E2/TH.2-3;B-1")
-        results = retrosheet_codes.play_formats.matches_format(self.play_results)
+
+        testcases = ["64(2)4(1)3/GTP", "34/SH.2-3", "K+WP.B-1", "S7/G/MREV.2XH(72)", "53/SH/BG-.1-2", "K+E2/TH.2-3;B-1", "9/F9LF", "S8/L.2-H;1-3"]
+        for test in testcases:
+            results = retrosheet_codes.play_formats.matches_format(test)
+
+        #results = retrosheet_codes.play_formats.matches_format(self.play_results)
         
         if len(results) > 0:
             for res in results:
@@ -98,10 +100,11 @@ class play_record(record):
                 res[0] == retrosheet_codes.play_formats.error_on_foul_fly or \
                 res[0] == retrosheet_codes.play_formats.pick_off_error or \
                 res[0] == retrosheet_codes.play_formats.strikeout_error_event or \
+                res[0] == retrosheet_codes.play_formats.strikeout_wild_pitch or \
                 res[0] == retrosheet_codes.play_formats.walk_error_event:
                     self.outs_made -= 1 if self.outs_made > 0 else 0 #????? how am I supposed to know how many outs??
                     
-                print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
+                #print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
 
             if self.base_hit == True and not any(res[0] == retrosheet_codes.play_formats.putout_baserunner for res in results) :
                 self.outs_made = -1
@@ -126,6 +129,8 @@ class game_record:
         self.comments = []
         self.substitutions = []
         self.data = []
+        self.away_team = None
+        self.home_team = None
     def add(self, tokens=[]):
         tk = tokens[0]
         if (tk == record_type.version.value):
@@ -144,3 +149,42 @@ class game_record:
         elif (tk == record_type.data.value):
             self.data.append(record(tokens))
 
+class team:
+    def __init__(self, _id='', _name=''):
+        self.team_id = ''
+        self.team_name = ''
+        self.league
+
+class teams(Enum):
+    '''
+    Angels
+    Astros
+    Athletics
+    Blue Jays
+    Braves
+    Brewers
+    Cardinals
+    Cubs
+    D-backs
+    Dodgers
+    Giants
+    Indians
+    Mariners
+    Marlins
+    Mets
+    Nationals
+    Orioles
+    Padres
+    Phillies
+    Pirates
+    Rangers
+    Rays
+    Red Sox
+    Reds
+    Rockies
+    Royals
+    Tigers
+    Twins
+    White Sox
+    Yankees
+    '''

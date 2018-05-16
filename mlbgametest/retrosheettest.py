@@ -33,17 +33,33 @@ EVENT_DIR = '2017eve/'
 
 dict_catchers = {}
 
-def add_pitcher_to_catcher_dict(catcher, pitcher, game):
-    batteries = dict_catchers.get(catcher)
-    if batteries is None:
-        dict_catchers[catcher] = {}
-        batteries = dict_catchers.get(catcher)
-    pitcher_starts = batteries.get(pitcher)
-    if pitcher_starts is None:
-        batteries[pitcher] = []
-        pitcher_starts = batteries.get(pitcher)
-    #pitcher_starts.append(game)
-    #nprev_play = -1
+def parse_game_for_batteries(game):
+    
+    #starting_pitcher_home = None
+    #starting_catcher_home = None
+    #starting_pitcher_away = None
+    #starting_catcher_away = None
+    #for starter in game.starters:
+    #    if (starter.start_field_pos == fpos.C):
+    #        if (starter.is_home):                
+    #            starting_catcher_home = starter.player_id
+    #        else:
+    #            starting_catcher_away = starter.player_id
+    #    elif (starter.start_field_pos == fpos.P):
+    #        if (starter.is_home):
+    #            starting_pitcher_home = starter.player_id
+    #        else:
+    #            starting_pitcher_away = starter.player_id
+
+    #batteries = dict_catchers.get(catcher)
+    #if batteries is None:
+    #    dict_catchers[catcher] = {}
+    #    batteries = dict_catchers.get(catcher)
+    #pitcher_appearances = batteries.get(pitcher)
+    #if pitcher_appearances is None:
+    #    batteries[pitcher] = []
+    #    pitcher_appearances = batteries.get(pitcher)
+
     outs = 0
     inning = 0
     is_home = None
@@ -61,26 +77,32 @@ def add_pitcher_to_catcher_dict(catcher, pitcher, game):
         print ('\n=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))
         if play._type == rt.play.value:
             play.parse_play_results()
-            #if (retrosheet_codes.play_formats.no_play in play.play_formats):
-            #    print('no play')
             if (play.outs_made != -1):
                 outs += play.outs_made
                 print('[{}]>    outs: {}'.format(play.outs_made, outs))
             #else:
             #    print('Warning! could not determine number of outs made!')
         if play._type == rt.sub.value:
-            pass # remove this
-            #print('{} replaces {} for {} team, batting {}'.format(play.player_id, fpos.getname(play.sub_field_pos), 'home' if play.is_home else 'away', play.batting_order))
+            print('{} replaces {} for {} team, batting {}, with {} outs left in the inning.'
+                  .format(play.player_id, fpos.getname(play.sub_field_pos), 'home' if play.is_home else 'away', play.batting_order, outs))
             #if play.sub_field_pos == fpos.P:
-            #    print('pitcher replaced')
+            #    print('catcher {} caught {}.{} innings for pitcher {}'.format(catcher, inning, outs, pitcher))
+            #    pitcher_appearances.append((game, float(str(inning)+'.'+str(outs)), [])) # maybe append a list of other stats later when I can extract more data (earned runs, walks, etc.)
+            #    pitcher = play.player_id               
+            #    pitcher_appearances = batteries.get(pitcher)
+            #    if pitcher_appearances is None:
+            #        batteries[pitcher] = []
+            #        pitcher_appearances = batteries.get(pitcher)
             #if play.sub_field_pos == fpos.C:
-            #    print('catcher replaced')    
-    #            if nprev_play != -1:
-    #                print (game.plays[nprev_play].inning)
-                    
-        #else:
+            #    print('catcher replaced')
+            #    catcher = play.player_id
+            #    batteries = dict_catchers.get(catcher)
+            #    if batteries is None:
+            #        dict_catchers[catcher] = {}
+            #        batteries = dict_catchers.get(catcher)
 
-        #nprev_play = n
+            #add_pitcher_to_catcher_dict(catcher, pitcher, None)
+
 
 def main():
 
@@ -122,24 +144,8 @@ def main():
         
     begin_time = time.time()
     for id, game in game_records.iteritems():
-        starting_pitcher_home = None
-        starting_catcher_home = None
-        starting_pitcher_away = None
-        starting_catcher_away = None
-        for starter in game.starters:
-            if (starter.start_field_pos == fpos.C):
-                if (starter.is_home):                
-                    starting_catcher_home = starter.player_id
-                else:
-                    starting_catcher_away = starter.player_id
-            elif (starter.start_field_pos == fpos.P):
-                if (starter.is_home):
-                    starting_pitcher_home = starter.player_id
-                else:
-                    starting_pitcher_away = starter.player_id
 
-        add_pitcher_to_catcher_dict(starting_catcher_home, starting_pitcher_home, game)
-        add_pitcher_to_catcher_dict(starting_catcher_away, starting_pitcher_away, game)
+        parse_game_for_batteries(game)
 
         #break #debug to just analyze one game
                     
