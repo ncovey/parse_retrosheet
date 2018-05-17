@@ -124,11 +124,14 @@ class play_formats(Enum):
     balk = 'BK'
     line_drive_bunt = 'BL'
     double_play = 'DP'
+    triple_play = 'TP'
 
     putout_baserunner = '%X%(#[/TH,])'
     strikeout_error_event = 'K+E$[/TH,]'
-    strikeout_wild_pitch = 'K+WP*[B-%,]'
-    strikeout_passed_ball = 'K+PB*[B-%,]'
+    strikeout_wild_pitch_batter_safe = 'K+WP*[B-%]'
+    strikeout_wild_pitch = 'K+WP'
+    strikeout_passed_ball_batter_safe = 'K+PB*[B-%]'
+    strikeout_passed_ball = 'K+PB'
     
     #class play(object):
     #    def __init__(self):
@@ -206,6 +209,9 @@ class play_formats(Enum):
                         continue
                     if _string_itr < len(s):
                         cand_char = s[_string_itr]
+                        if cand_char in '!?': # these are used in retrosheet to indicate if the play was extraordinary or uncertainty
+                            _string_itr += 1
+                            continue
                         ntype = notation_type.get_char_to_type(tkn)
                         if ntype is not None:
                             #print('tkn="{}"'.format(tkn))
@@ -213,7 +219,16 @@ class play_formats(Enum):
                             #print('looking at "{}" in "{}"'.format(cand_char, s))
                             #print('comparing against type: {}[{}] in {}'.format(ntype.value, j, _frmt))
                             notatlen = is_notation_type(ntype, s, _string_itr)
-                            if notatlen != -1:
+                            if notatlen == 0: # wildcard
+                                bFound = True
+                                if nbegin == -1:
+                                    nbegin = _string_itr + i                                    
+                                if j < (len(_frmt) - 1):                                    
+                                    next_char = _frmt[j+1]
+                                    while (_string_itr < (len(s) - 1)) and (s[_string_itr] != next_char):
+                                        _string_itr += 1
+                                    match_string = s[:_string_itr]
+                            elif notatlen > 0:
                                 #print('MATCH! notation comparision: "{}"[{}] matches with "{}"[{}]. "{}" is of type: {} ({})'.format(s, _string_itr, _frmt, j, s[_string_itr:notatlen + _string_itr], ntype._name_, tkn))
                                 bFound = True
                                 if nbegin == -1:
@@ -329,6 +344,7 @@ class play_formats(Enum):
         else:            
             #print('matching formats for "{}":'.format(_events))
             #for match in matches: print('{}'.format(match))
+
             duplicates = [_match for match in matches for _match in matches if _match[2] in match[2] and _match is not match]
             matches = [m for m in matches if m not in duplicates]
 
