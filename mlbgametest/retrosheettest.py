@@ -104,28 +104,39 @@ def parse_game_for_batteries(game):
             #add_pitcher_to_catcher_dict(catcher, pitcher, None)
 
 
+def run_tests():    
+    testcases = [
+    "64(2)4(1)3/GTP",
+    "34/SH.2-3", 
+    "K+WP.2-3;B-1",
+    "K+WP.2-3;1-2", 
+    "S7/G/MREV.2XH(72)", 
+    "53/SH/BG-.1-2", 
+    "K+E2/TH.2-3;B-1", 
+    "9/F9LF", 
+    "S8/L.2-H;1-3",
+    "8!/F+",
+    "7/L/TP.2X2(74);1X1(43)",
+    "OA.2-3(E2/TH);1-2(TH)",
+    "K+SB3.2-H(UR)(E2/TH3);1-2",
+    "OA.3-H(UR)(E2)(NR);1-2",
+    "OA.3-H(UR)(E2/TH)(NR);2-H(UR)(NR);1-2",
+    "OA.1-2(E2/TH)",
+                    ]
+    for test in testcases:
+        results = retrosheet_codes.play_formats.matches_format(test)
+        outs = 0;
+        print('{}'.format(test))
+        for res in results:
+            _out = retrosheet_codes.play_formats.get_outs(res[0])
+            if _out != -1:
+                outs += _out
+            print('\t{} ({}): out = {}'.format(res[2], res[1], _out))
+        print('outs detected: {}\n'.format(outs))
+
 def main():
 
-    testcases = [
-    #"64(2)4(1)3/GTP",
-    #"34/SH.2-3", 
-    #"K+WP.2-3;B-1",
-    #"K+WP.2-3;1-2", 
-    #"S7/G/MREV.2XH(72)", 
-    #"53/SH/BG-.1-2", 
-    #"K+E2/TH.2-3;B-1", 
-    #"9/F9LF", 
-    #"S8/L.2-H;1-3",
-    #"8!/F+",
-    #"7/L/TP.2X2(74);1X1(43)",
-    #"OA.2-3(E2/TH);1-2(TH)",
-    "K+SB3.2-H(UR)(E2/TH3);1-2",
-    #"OA.3-H(UR)(E2)(NR);1-2",
-    #"OA.3-H(UR)(E2/TH)(NR);2-H(UR)(NR);1-2",
-    #"OA.1-2(E2/TH)",
-                ]
-    for test in testcases: results = retrosheet_codes.play_formats.matches_format(test)
-
+    #run_tests()
 
     eventdata = {}
     rosdata = {}

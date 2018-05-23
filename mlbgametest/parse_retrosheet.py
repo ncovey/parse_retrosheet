@@ -54,7 +54,12 @@ class play_record(record):
 
 
     def parse_play_results(self):
-        results = retrosheet_codes.play_formats.matches_format(self.play_results)
+        play_res = ''
+        if '!' in self.play_results or '?' in self.play_results:
+            play_res = self.play_results.replace('!', '').replace('?', '')
+        else:
+            play_res = self.play_results
+        results = retrosheet_codes.play_formats.matches_format(play_res)
         
         if len(results) > 0:
             for res in results:
@@ -97,7 +102,7 @@ class play_record(record):
                     res[0] == retrosheet_codes.play_formats.error_on_foul_fly or
                     res[0] == retrosheet_codes.play_formats.pick_off_error or
                     res[0] == retrosheet_codes.play_formats.strikeout_error_event or
-                    res[0] == retrosheet_codes.play_formats.strikeout_wild_pitch_batter_to_1B or
+                    res[0] == retrosheet_codes.play_formats.strikeout_wild_pitch_batter_safe or
                     res[0] == retrosheet_codes.play_formats.walk_error_event):
                     self.outs_made -= 1 if self.outs_made > 0 else 0 #????? how am I supposed to know how many outs??
                     

@@ -82,7 +82,7 @@ class play_formats(Enum):
     single = 'S$[/~,]'
     double = 'D$[/~,]'
     triple = 'T$[/~,]'
-    error = '[$,]E$[/~,/TH,]'    
+    error = '[$,]E$[/~,]'    
     out = '!#/[~,@,~@,SH/~,]'
     stolen_base_at = 'SB%'
     forceout = '#(%)/FO[/~,]'
@@ -126,19 +126,62 @@ class play_formats(Enum):
     double_play = 'DP'
     triple_play = 'TP'
 
+    throw_to_base = 'TH%'
+    error_on_throw_to_base = 'E$/TH[%,]'
+
     putout_baserunner = '%X%(#[/TH,])'
     strikeout_error_event = 'K+E$[/TH,]'
     strikeout_wild_pitch_batter_safe = 'K+WP*[B-%]'
     strikeout_wild_pitch = 'K+WP'
     strikeout_passed_ball_batter_safe = 'K+PB*[B-%]'
     strikeout_passed_ball = 'K+PB'
+
+    unearned_run = 'UR'
+    no_rbi = 'NR'
     
+    batter_reaches_base = 'B-%'
+
     #class play(object):
     #    def __init__(self):
     #        self.fielders = []
     #        self.baserunners = []
     #        self.location = None
     #        self.batted_ball = None
+
+    @staticmethod
+    def get_outs(frmt):                
+        if (frmt == play_formats.triple_play or
+            frmt == play_formats.grounded_into_triple_play or
+            frmt == play_formats.lined_into_triple_play):
+            return 3
+        elif (
+            frmt == play_formats.double_play or
+            frmt == play_formats.grounded_into_double_play or
+            frmt == play_formats.lined_into_double_play):
+            return 2
+        elif (
+            frmt == play_formats.out or
+            frmt == play_formats.forceout or
+            frmt == play_formats.caught_stealing_at or
+            frmt == play_formats.picked_off_at or
+            frmt == play_formats.picked_off_caught_stealing or
+            frmt == play_formats.strikeout_fielding_play or
+            frmt == play_formats.strikeout or
+            frmt == play_formats.out_ambiguous or
+            frmt == play_formats.line_drive_bunt or
+            frmt == play_formats.strikeout_wild_pitch or
+            frmt == play_formats.strikeout_passed_ball or
+            frmt == play_formats.putout_baserunner):
+           return 1
+        elif (frmt == play_formats.error or
+            frmt == play_formats.error_on_foul_fly or
+            frmt == play_formats.pick_off_error or
+            frmt == play_formats.strikeout_error_event or
+            frmt == play_formats.strikeout_wild_pitch_batter_safe or
+            frmt == play_formats.walk_error_event):
+            return -1
+        else:
+            return 0
 
 
     @staticmethod
