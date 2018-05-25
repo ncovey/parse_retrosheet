@@ -61,6 +61,10 @@ class play_record(record):
             play_res = self.play_results
         results = retrosheet_codes.play_formats.matches_format(play_res)
         
+        evts = []
+        for res in results:
+            evts.append(res[0])
+
         if len(results) > 0:
             for res in results:
                 self.play_formats.append(res[0])
@@ -84,6 +88,8 @@ class play_record(record):
                     res[0] == retrosheet_codes.play_formats.lined_into_double_play):
                     self.outs_made = 2 if self.outs_made < 2 else self.outs_made
                 elif (
+                    (retrosheet_codes.play_formats.putout_baserunner not in evts and
+                    res[0] == retrosheet_codes.play_formats.out_ambiguous) or
                     res[0] == retrosheet_codes.play_formats.out or
                     res[0] == retrosheet_codes.play_formats.forceout or
                     res[0] == retrosheet_codes.play_formats.caught_stealing_at or
@@ -91,14 +97,17 @@ class play_record(record):
                     res[0] == retrosheet_codes.play_formats.picked_off_caught_stealing or
                     res[0] == retrosheet_codes.play_formats.strikeout_fielding_play or
                     res[0] == retrosheet_codes.play_formats.strikeout or
-                    res[0] == retrosheet_codes.play_formats.out_ambiguous or
                     res[0] == retrosheet_codes.play_formats.line_drive_bunt or
                     res[0] == retrosheet_codes.play_formats.strikeout_wild_pitch or
-                    res[0] == retrosheet_codes.play_formats.strikeout_passed_ball or
-                    res[0] == retrosheet_codes.play_formats.putout_baserunner):
+                    res[0] == retrosheet_codes.play_formats.strikeout_passed_ball or                    
+                    res[0] == retrosheet_codes.play_formats.putout_baserunner or
+                    res[0] == retrosheet_codes.play_formats.picked_off_at):
                     self.outs_made = 1 if self.outs_made < 1 else self.outs_made
 
-                if (res[0] == retrosheet_codes.play_formats.error or
+                if (
+                    (retrosheet_codes.play_formats.strikeout not in evts and 
+                    res[0] == retrosheet_codes.play_formats.error_on_throw) or 
+                    res[0] == retrosheet_codes.play_formats.error or
                     res[0] == retrosheet_codes.play_formats.error_on_foul_fly or
                     res[0] == retrosheet_codes.play_formats.pick_off_error or
                     res[0] == retrosheet_codes.play_formats.strikeout_error_event or

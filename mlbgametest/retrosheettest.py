@@ -106,37 +106,48 @@ def parse_game_for_batteries(game):
 
 def run_tests():    
     testcases = [
-    "64(2)4(1)3/GTP",
-    "34/SH.2-3", 
-    "K+WP.2-3;B-1",
-    "K+WP.2-3;1-2", 
-    "S7/G/MREV.2XH(72)", 
-    "53/SH/BG-.1-2", 
-    "K+E2/TH.2-3;B-1", 
-    "9/F9LF", 
-    "S8/L.2-H;1-3",
-    "8!/F+",
-    "7/L/TP.2X2(74);1X1(43)",
-    "OA.2-3(E2/TH);1-2(TH)",
-    "K+SB3.2-H(UR)(E2/TH3);1-2",
-    "OA.3-H(UR)(E2)(NR);1-2",
-    "OA.3-H(UR)(E2/TH)(NR);2-H(UR)(NR);1-2",
-    "OA.1-2(E2/TH)",
-                    ]
+    ["64(2)4(1)3/GTP", 3],
+    ["34/SH.2-3", 1],
+    ["K+WP.2-3;B-1", 0],
+    ["K+WP.2-3;1-2", 1],
+    ["S7/G/MREV.2XH(72)", 1],
+    ["53/SH/BG-.1-2", 1],
+    ["K+E2/TH.2-3;B-1", 0],
+    ["9/F9LF", 1],
+    ["S8/L.2-H;1-3", 0],
+    ["8!/F+", 1],
+    ["7/L/TP.2X2(74);1X1(43)", 3],
+    ["OA.2-3(E2/TH);1-2(TH)", 1],
+    ["K+SB3.2-H(UR)(E2/TH3);1-2", 1],
+    ["OA.3-H(UR)(E2)(NR);1-2", 0],
+    ["OA.3-H(UR)(E2/TH)(NR);2-H(UR)(NR);1-2", 0],
+    ["OA.1-2(E2/TH)", 0],
+    ["OA.2-3(E2/TH);1-2(TH)", 0],
+    ["OA.3-H(E2/TH);2-H(UR);1-2", 0],
+    ["W+OA.1-3(E2/TH)", 0],
+    ["OA.1-2(E2/TH)", 0],
+    ["53", 1],
+    ["43-/G", 1],
+    ["PO2(256)", 1],
+    ["K+SB2.1-3(E2/TH)", 1],
+    ]
     for test in testcases:
-        results = retrosheet_codes.play_formats.matches_format(test)
+        st, o = test[0], test[1]
+        results = retrosheet_codes.play_formats.matches_format(st)
         outs = 0;
         print('{}'.format(test))
         for res in results:
             _out = retrosheet_codes.play_formats.get_outs(res[0])
-            if _out != -1:
+            if outs < 3:
                 outs += _out
             print('\t{} ({}): out = {}'.format(res[2], res[1], _out))
         print('outs detected: {}\n'.format(outs))
+        if outs != o:
+            print("FAILED. Expected {} outs".format(o))
 
 def main():
 
-    #run_tests()
+    run_tests()
 
     eventdata = {}
     rosdata = {}

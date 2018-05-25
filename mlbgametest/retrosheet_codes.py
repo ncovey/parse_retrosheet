@@ -83,7 +83,7 @@ class play_formats(Enum):
     double = 'D$[/~,]'
     triple = 'T$[/~,]'
     error = '[$,]E$[/~,]'    
-    out = '!#/[~,@,~@,SH/~,]'
+    out = '!#[/~,/@,/~@,/SH/~,]'
     stolen_base_at = 'SB%'
     forceout = '#(%)/FO[/~,]'
     grounded_into_double_play = '#(%)#[(%),]/[~,]DP[/~,]'
@@ -102,7 +102,7 @@ class play_formats(Enum):
     walk_event = '[IW,W]+[PB,WP]'
     caught_stealing_at = 'CS%[($$),]'
     caught_stealing_error = 'CS%($E$)'
-    picked_off_at = 'PO%($$)'
+    picked_off_at = 'PO%(#)'
     pick_off_error = 'PO%(E$)'
     picked_off_caught_stealing = 'POCS%(#)'
     strikeout_fielding_play = 'K#'
@@ -127,7 +127,7 @@ class play_formats(Enum):
     triple_play = 'TP'
 
     throw_to_base = 'TH%'
-    error_on_throw_to_base = 'E$/TH[%,]'
+    error_on_throw = 'E$/TH[%,]'
 
     putout_baserunner = '%X%(#[/TH,])'
     strikeout_error_event = 'K+E$[/TH,]'
@@ -160,6 +160,7 @@ class play_formats(Enum):
             frmt == play_formats.lined_into_double_play):
             return 2
         elif (
+            frmt == play_formats.out_ambiguous or
             frmt == play_formats.out or
             frmt == play_formats.forceout or
             frmt == play_formats.caught_stealing_at or
@@ -167,10 +168,10 @@ class play_formats(Enum):
             frmt == play_formats.picked_off_caught_stealing or
             frmt == play_formats.strikeout_fielding_play or
             frmt == play_formats.strikeout or
-            frmt == play_formats.out_ambiguous or
             frmt == play_formats.line_drive_bunt or
             frmt == play_formats.strikeout_wild_pitch or
             frmt == play_formats.strikeout_passed_ball or
+            frmt == play_formats.picked_off_at or
             frmt == play_formats.putout_baserunner):
            return 1
         elif (frmt == play_formats.error or
@@ -178,6 +179,7 @@ class play_formats(Enum):
             frmt == play_formats.pick_off_error or
             frmt == play_formats.strikeout_error_event or
             frmt == play_formats.strikeout_wild_pitch_batter_safe or
+            frmt == play_formats.error_on_throw or
             frmt == play_formats.walk_error_event):
             return -1
         else:
