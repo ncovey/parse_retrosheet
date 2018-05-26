@@ -68,18 +68,20 @@ def parse_game_for_batteries(game):
         if (play.is_home != is_home) and play._type != rt.sub.value:
             if (outs < 3 and is_home != None):
                 print('Warning! -less- than 3 outs detected!')
+                #raise(Exception('Warning! -less- than 3 outs detected!'))
             elif (outs > 3 and is_home != None):
                 print('Warning! +more+ than 3 outs detected!')
+                #raise(Exception('Warning! +more+ than 3 outs detected!'))
             outs = 0
             is_home = play.is_home
         if (hasattr(play, 'inning') and play.inning != inning):
             inning = play.inning
-        print ('\n=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))
         if play._type == rt.play.value:
+            print ('\n=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))            
             play.parse_play_results()
             if (play.outs_made != -1):
                 outs += play.outs_made
-                print('[{}]>    outs: {}'.format(play.outs_made, outs))
+                print('total outs in inning:    [{}]'.format(play.outs_made, outs))
             #else:
             #    print('Warning! could not determine number of outs made!')
         if play._type == rt.sub.value:
@@ -106,6 +108,7 @@ def parse_game_for_batteries(game):
 
 def run_tests():    
     testcases = [
+    ["S1", 0],
     ["64(2)4(1)3/GTP", 3],
     ["34/SH.2-3", 1],
     ["K+WP.2-3;B-1", 0],
@@ -117,7 +120,7 @@ def run_tests():
     ["S8/L.2-H;1-3", 0],
     ["8!/F+", 1],
     ["7/L/TP.2X2(74);1X1(43)", 3],
-    ["OA.2-3(E2/TH);1-2(TH)", 1],
+    ["OA.2-3(E2/TH);1-2(TH)", 0],
     ["K+SB3.2-H(UR)(E2/TH3);1-2", 1],
     ["OA.3-H(UR)(E2)(NR);1-2", 0],
     ["OA.3-H(UR)(E2/TH)(NR);2-H(UR)(NR);1-2", 0],
@@ -130,32 +133,39 @@ def run_tests():
     ["43-/G", 1],
     ["PO2(256)", 1],
     ["K+SB2.1-3(E2/TH)", 1],
+    ["K+PO2(E2).2-3", 1],
     ]
     for test in testcases:
         st, o = test[0], test[1]
-        results = retrosheet_codes.play_formats.matches_format(st)
+        begin_time = time.time()
+        results = retrosheet_codes.matches_format(st)
+        print ('total time to find matching formats: {}'.format(time.time() - begin_time))
         outs = 0;
         print('{}'.format(test))
         for res in results:
-            _out = retrosheet_codes.play_formats.get_outs(res[0])
+            _out = retrosheet_codes.get_outs(res[0])
             if outs < 3:
                 outs += _out
             print('\t{} ({}): out = {}'.format(res[2], res[1], _out))
         print('outs detected: {}\n'.format(outs))
+        if outs == -1: outs = 0
         if outs != o:
             print("FAILED. Expected {} outs".format(o))
+            return False
+    # all tests passed        
+    return True
 
 def main():
 
-    run_tests()
+    #assert(run_tests())
 
     eventdata = {}
     rosdata = {}
 
     begin_time = time.time()
     for filename in os.listdir(EVENT_DIR):
-        if ('.EVN' in filename or '.EVA' in filename):
-        #if ('SDN.EVN' in filename): # for debug
+        #if ('.EVN' in filename or '.EVA' in filename):
+        if ('SDN.EVN' in filename): # for debug
             eventdata[filename] = open(EVENT_DIR + filename, 'r')
         #elif ('.ROS' in filename):
         #    rosdata[filename] = open(EVENT_DIR + filename, 'r')

@@ -1,6 +1,7 @@
 
 from enum import Enum, unique
 import itertools
+import time
 
 @unique
 class fielding_position_codes(Enum):
@@ -79,24 +80,24 @@ class play_formats(Enum):
     [..., ..., ...] = to explicitly specify event code possibilities. use ',' to separate. Can look for literals or notation. End list with a comma if you want to specify that these tokens might not exist.
     Any characters not recognized will be looked for literally, and not as codes.
     '''
-    single = 'S$[/~,]'
-    double = 'D$[/~,]'
-    triple = 'T$[/~,]'
+    single = '!S$[/~,]'
+    double = '!D$[/~,]'
+    triple = '!T$[/~,]'
     error = '[$,]E$[/~,]'    
     out = '!#[/~,/@,/~@,/SH/~,]'
     stolen_base_at = 'SB%'
-    forceout = '#(%)/FO[/~,]'
-    grounded_into_double_play = '#(%)#[(%),]/[~,]DP[/~,]'
-    grounded_into_triple_play = '#(%)#(%)#[(%),(%)#,]/GTP[/~,]'    
-    lined_into_double_play = '$(B)#(%)/LDP/~$'
-    lined_into_triple_play = '$(B)#(%)#(%)/LTP/~$'
+    forceout = '!#(%)/FO[/~,]'
+    grounded_into_double_play = '!#(%)#[(%),]/[~,]DP[/~,]'
+    grounded_into_triple_play = '!#(%)#(%)#[(%),(%)#,]/GTP[/~,]'    
+    lined_into_double_play = '!$(B)#(%)/LDP/~$'
+    lined_into_triple_play = '!$(B)#(%)#(%)/LTP/~$'
     batter_interference = 'C/[E2,E1,E3]'
     fielders_choice = 'FC$'
     error_on_foul_fly = 'FLE$'
     inside_the_park_home_run = '[HR,H]$' #/~@'
-    baserunning_event_at = '+[SB,CS,PO]%'
-    baserunning_error_event = '+E$'
-    baserunning_event = '+[OA,PB,WP]'
+    #baserunning_event_at = '+[SB,CS,PO]%'
+    #baserunning_error_event = '+E$'
+    #baserunning_event = '+[OA,PB,WP]'
     walk_event_at = '[IW,W]+[SB,CS,PO]%'
     walk_error_event = '[IW,W]+E$'
     walk_event = '[IW,W]+[PB,WP]'
@@ -109,6 +110,23 @@ class play_formats(Enum):
     
     baserunning_advances = '[.,;]%-%'
 
+    throw_to_base = 'TH%'
+    error_on_throw = 'E$/TH[%,]'
+
+    putout_baserunner = '%X%(#[/TH,])'
+    strikeout_pickoff_error = 'K+[PO%,][(,]E$[/TH,/TH%,][),]'
+    strikeout_error_event = 'K+E$[/TH,]'
+    strikeout_wild_pitch_batter_safe = 'K+WP*B-%'
+    strikeout_wild_pitch = 'K+WP'
+    strikeout_passed_ball_batter_safe = 'K+PB*B-%'
+    strikeout_passed_ball = 'K+PB'
+    other_advance = 'OA'
+
+    unearned_run = 'UR'
+    no_rbi = 'NR'
+    
+    batter_reaches_base = 'B-%'
+
     walk = 'W'
     intentional_walk = 'IW'
     wild_pitch = 'WP'
@@ -118,38 +136,15 @@ class play_formats(Enum):
     no_play = 'NP'
     passed_ball = 'PB'
     defensive_indifference = 'DI'
-    out_ambiguous = 'OA'
+    
     ground_rule_double = 'DGR'
-    stolen_base = 'SB'
     balk = 'BK'
     line_drive_bunt = 'BL'
     double_play = 'DP'
     triple_play = 'TP'
 
-    throw_to_base = 'TH%'
-    error_on_throw = 'E$/TH[%,]'
-
-    putout_baserunner = '%X%(#[/TH,])'
-    strikeout_error_event = 'K+E$[/TH,]'
-    strikeout_wild_pitch_batter_safe = 'K+WP*[B-%]'
-    strikeout_wild_pitch = 'K+WP'
-    strikeout_passed_ball_batter_safe = 'K+PB*[B-%]'
-    strikeout_passed_ball = 'K+PB'
-
-    unearned_run = 'UR'
-    no_rbi = 'NR'
-    
-    batter_reaches_base = 'B-%'
-
-    #class play(object):
-    #    def __init__(self):
-    #        self.fielders = []
-    #        self.baserunners = []
-    #        self.location = None
-    #        self.batted_ball = None
-
     @staticmethod
-    def get_outs(frmt):                
+    def get_outs(frmt):
         if (frmt == play_formats.triple_play or
             frmt == play_formats.grounded_into_triple_play or
             frmt == play_formats.lined_into_triple_play):
@@ -160,7 +155,6 @@ class play_formats(Enum):
             frmt == play_formats.lined_into_double_play):
             return 2
         elif (
-            frmt == play_formats.out_ambiguous or
             frmt == play_formats.out or
             frmt == play_formats.forceout or
             frmt == play_formats.caught_stealing_at or
@@ -171,15 +165,17 @@ class play_formats(Enum):
             frmt == play_formats.line_drive_bunt or
             frmt == play_formats.strikeout_wild_pitch or
             frmt == play_formats.strikeout_passed_ball or
+            frmt == play_formats.strikeout_pickoff_error or
             frmt == play_formats.picked_off_at or
             frmt == play_formats.putout_baserunner):
-           return 1
-        elif (frmt == play_formats.error or
+            return 1
+        elif (
+            frmt == play_formats.error or
             frmt == play_formats.error_on_foul_fly or
             frmt == play_formats.pick_off_error or
             frmt == play_formats.strikeout_error_event or
             frmt == play_formats.strikeout_wild_pitch_batter_safe or
-            frmt == play_formats.error_on_throw or
+            #frmt == play_formats.error_on_throw or
             frmt == play_formats.walk_error_event):
             return -1
         else:
@@ -239,8 +235,7 @@ class play_formats(Enum):
 
             return -1
 
-
-        def compare_string_to_format(_string, _frmt): 
+        def compare_string_to_format(_string, _frmt):
             for i, _ in enumerate(_string):
                 bAtBegin = _frmt[0] == '!'
                 nbegin = -1
@@ -348,48 +343,47 @@ class play_formats(Enum):
             else:
                 return []
 
-
-
-        matches = []
-        formats = list(play_formats)
-        formats.sort(key = lambda s: len(s.value), reverse=False)
-        format_res = []
-        for _frmt in formats:
+        def get_matches_in_format(_frmt, _events):
+            format_res = []
             format = _frmt.value
             #print('evaluating "{}"'.format(format))
-            if '[' in format and ']' in format:                
+            if '[' in format and ']' in format:
                 options = enumerate_bracket_options(format)
                 options.sort(key = lambda s: len(s), reverse=False)
                 for opt_str in options:
+                    if len(opt_str.replace('!','')) > len(_events):
+                        continue
                     #print('evaluating option "{}" in format: "{}" ({})'.format(opt_str, _frmt.value, _frmt._name_))
                     match_string, begin, end = compare_string_to_format(_events, opt_str)
                     if match_string != '':
-                        #print('Detected: {} "{}" in play: {} @ ({},{})="{}".'.format(_frmt._name_, opt_str, _events, begin, end, _events[begin:end]))
                         format_res.append((_frmt, opt_str, match_string, (begin, end)))
             else:
-                match_string, begin, end = compare_string_to_format(_events, format)
-                if match_string != '':
-                    #print('Detected: {} "{}" in play: {} @ ({},{})="{}".'.format(_frmt._name_, format, _events, begin, end, _events[begin:end]))
-                    format_res.append((_frmt, format, match_string, (begin, end)))
-        if len(format_res) > 0:
-            matches += format_res
+                if len(format.replace('!','')) <= len(_events):                    
+                    match_string, begin, end = compare_string_to_format(_events, format)
+                    if match_string != '':
+                        format_res.append((_frmt, format, match_string, (begin, end)))            
+            return format_res
+
+        matches = []
+
+        #begin_time = time.time()
+        for _frmt in formats_list:
+            matches += get_matches_in_format(_frmt, _events)
+        #print ('time to match_string from options: {}'.format(time.time() - begin_time))
 
         if len(matches) == 0:
             print('Could not find a matching play type for: {} !'.format(_events))
-            for code in play_event_codes:
-                idx = _events.find(code.value)
-                if idx != -1:
-                    #print('found "{}" in "{} @ ({},{})="{}""'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
-                    matches.append((code, '', code.value, (idx, len(code.value))))
-            for code in out_play_event_codes:
-                idx = _events.find(code.value)
-                if idx != -1:
-                    #print('found "{}" in "{}"'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
-                    matches.append((code, '', code.value, (idx, len(code.value))))
-        else:            
-            #print('matching formats for "{}":'.format(_events))
-            #for match in matches: print('{}'.format(match))
-
+            #for code in play_event_codes:
+            #    idx = _events.find(code.value)
+            #    if idx != -1:
+            #        #print('found "{}" in "{} @ ({},{})="{}""'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
+            #        matches.append((code, '', code.value, (idx, len(code.value))))
+            #for code in out_play_event_codes:
+            #    idx = _events.find(code.value)
+            #    if idx != -1:
+            #        #print('found "{}" in "{}"'.format(code._name_, _events, idx, len(code.value), _events[idx:len(code.value)]))
+            #        matches.append((code, '', code.value, (idx, len(code.value))))
+        else:
             duplicates = [_match for match in matches for _match in matches if _match[2] in match[2] and _match is not match]
             matches = [m for m in matches if m not in duplicates]
 
@@ -613,6 +607,8 @@ all_plays_sorted += sorted_locations
 all_plays_sorted.sort(key = lambda s: len(s.value), reverse=True)
 
 
+formats_list = list(play_formats)
+formats_list.sort(key = lambda s: len(s.value), reverse=False)
 
 #@staticmethod
 def get_event_code(_events, type=None):

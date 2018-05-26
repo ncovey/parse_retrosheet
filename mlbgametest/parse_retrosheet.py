@@ -4,6 +4,7 @@ import retrosheet_codes
 from retrosheet_codes import fielding_position_codes as fpos
 import re
 import sys
+import time
 
 class record_type(Enum):
     # record type
@@ -59,66 +60,34 @@ class play_record(record):
             play_res = self.play_results.replace('!', '').replace('?', '')
         else:
             play_res = self.play_results
-        results = retrosheet_codes.play_formats.matches_format(play_res)
         
-        evts = []
-        for res in results:
-            evts.append(res[0])
+        results = retrosheet_codes.play_formats.matches_format(play_res)
 
         if len(results) > 0:
             for res in results:
-                self.play_formats.append(res[0])
+                #self.play_formats.append(res[0])
                 #print('"{}" - {} ({})'.format(self.play_results, res[0], res[1]))
-
                 if (res[0] == retrosheet_codes.play_formats.single or
                     res[0] == retrosheet_codes.play_formats.double or
                     res[0] == retrosheet_codes.play_formats.triple or
                     res[0] == retrosheet_codes.play_formats.home_run or
                     res[0] == retrosheet_codes.play_formats.inside_the_park_home_run):
                     self.base_hit = True
-
-                
-                if (res[0] == retrosheet_codes.play_formats.triple_play or
-                    res[0] == retrosheet_codes.play_formats.grounded_into_triple_play or
-                    res[0] == retrosheet_codes.play_formats.lined_into_triple_play):
-                    self.outs_made = 3 if self.outs_made < 3 else self.outs_made
-                elif (
-                    res[0] == retrosheet_codes.play_formats.double_play or
-                    res[0] == retrosheet_codes.play_formats.grounded_into_double_play or
-                    res[0] == retrosheet_codes.play_formats.lined_into_double_play):
-                    self.outs_made = 2 if self.outs_made < 2 else self.outs_made
-                elif (
-                    (retrosheet_codes.play_formats.putout_baserunner not in evts and
-                    res[0] == retrosheet_codes.play_formats.out_ambiguous) or
-                    res[0] == retrosheet_codes.play_formats.out or
-                    res[0] == retrosheet_codes.play_formats.forceout or
-                    res[0] == retrosheet_codes.play_formats.caught_stealing_at or
-                    res[0] == retrosheet_codes.play_formats.picked_off_at or
-                    res[0] == retrosheet_codes.play_formats.picked_off_caught_stealing or
-                    res[0] == retrosheet_codes.play_formats.strikeout_fielding_play or
-                    res[0] == retrosheet_codes.play_formats.strikeout or
-                    res[0] == retrosheet_codes.play_formats.line_drive_bunt or
-                    res[0] == retrosheet_codes.play_formats.strikeout_wild_pitch or
-                    res[0] == retrosheet_codes.play_formats.strikeout_passed_ball or                    
-                    res[0] == retrosheet_codes.play_formats.putout_baserunner or
-                    res[0] == retrosheet_codes.play_formats.picked_off_at):
-                    self.outs_made = 1 if self.outs_made < 1 else self.outs_made
-
-                if (
-                    (retrosheet_codes.play_formats.strikeout not in evts and 
-                    res[0] == retrosheet_codes.play_formats.error_on_throw) or 
-                    res[0] == retrosheet_codes.play_formats.error or
-                    res[0] == retrosheet_codes.play_formats.error_on_foul_fly or
-                    res[0] == retrosheet_codes.play_formats.pick_off_error or
-                    res[0] == retrosheet_codes.play_formats.strikeout_error_event or
-                    res[0] == retrosheet_codes.play_formats.strikeout_wild_pitch_batter_safe or
-                    res[0] == retrosheet_codes.play_formats.walk_error_event):
-                    self.outs_made -= 1 if self.outs_made > 0 else 0 #????? how am I supposed to know how many outs??
                     
-                print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
-
             if self.base_hit == True and not any(res[0] == retrosheet_codes.play_formats.putout_baserunner for res in results) :
                 self.outs_made = -1
+
+            else:
+                for res in results:
+                    _outs = retrosheet_codes.play_formats.get_outs(res[0])
+
+                    if _outs != -1:
+                        self.outs_made = _outs if self.outs_made < _outs else self.outs_made
+                    else:
+                        self.outs_made -= 1 if self.outs_made > 0 else 0
+
+                    print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
+
 
 
 class sub_record(record):
@@ -164,7 +133,7 @@ class team:
     def __init__(self, _id='', _name=''):
         self.team_id = ''
         self.team_name = ''
-        self.league
+        self.league = None
 
 class teams(Enum):
     '''
