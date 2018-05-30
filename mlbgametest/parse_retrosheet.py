@@ -99,12 +99,51 @@ class sub_record(record):
         self.batting_order = self._values[3]
         self.sub_field_pos = fpos.ntofpos(int(self._values[4]))
 
+class info_record(record):
+    def __init__(self, tokens = []):
+        record.__init__(self, tokens)
+        self.visteam = ''
+        self.hometeam = ''
+        self.site = ''
+        self.date = ''
+        self.number = ''
+        self.starttime = ''
+        self.daynight = ''
+        self.usedh = False
+        self.umphome = ''
+        self.ump1b = ''
+        self.ump2b = ''
+        self.ump3b = ''
+        self.howscored = ''
+        self.pitches = ''
+        self.oscorer = ''
+        self.temp = None
+        self.winddir = ''
+        self.windspeed = None
+        self.fieldcond = None
+        self.precip = None
+        self.sky = ''
+        self.timeofgame = -1
+        self.attendance = -1
+        self.wp = ''
+        self.lp = ''
+        self.save = ''
+
+class data_record(record):
+    def __init__(self, tokens = []):
+        record.__init__(self, tokens)
+        self.type = tokens[1]
+        self.pitcher = tokens[2]
+        self.earned_runs = tokens[3]
+
+
 class game_record:
     def __init__(self):
         self.id = ''
         self.ver = ''
         self.info = []
-        self.starters = []
+        self.starters_home = []
+        self.starters_away = []
         self.plays = []
         self.comments = []
         self.substitutions = []
@@ -116,18 +155,21 @@ class game_record:
         if (tk == record_type.version.value):
             self.ver = tokens[1]
         elif (tk == record_type.info.value):
-            self.info.append(record(tokens))
+            self.info.append(info_record(tokens))
         elif (tk == record_type.start.value):
-            self.starters.append(starter_record(tokens))
+            srec = starter_record(tokens)
+            if srec.is_home: self.starters_home.append(srec)
+            else: self.starters_away.append(srec)
         elif (tk == record_type.play.value):
             self.plays.append(play_record(tokens))
         elif (tk == record_type.com.value):
             self.comments.append(record(tokens))
         elif (tk == record_type.sub.value):
-            #self.substitutions.append(record(tokens))
             self.plays.append(sub_record(tokens))
         elif (tk == record_type.data.value):
-            self.data.append(record(tokens))
+            self.data.append(data_record(tokens))
+        else:
+            pass # ignore
 
 class team:
     def __init__(self, _id='', _name=''):
