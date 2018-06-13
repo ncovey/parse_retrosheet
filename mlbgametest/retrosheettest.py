@@ -48,6 +48,8 @@ class innings_val():
         return self.innings >= 0 and self.outs >= 0
     def __sub__(self, rhs):
         return self.from_total_outs(self.to_outs() - rhs.to_outs())
+    def __add__(self, rhs):
+        return self.from_total_outs(self.to_outs() + rhs.to_outs())
 
 class pitcher_perf():
     '''
@@ -61,14 +63,14 @@ class pitcher_perf():
         self.inning_end = None
         self.innings_pitched = inningsval
         self.earned_runs = earned_runs
-    def set_ip(self, startinn, endinn):
-        self.inning_start = startinn
-        self.inning_end = endinn
-        self.innings_pitched = innings_val(endinn.innings - 1, endinn.outs) - startinn
-    def set_ip(self, startinn, startouts, endinn, endouts):
-        self.innings_pitched = innings_val(endinn - 1, endouts) - innings_val(startinn, startouts)
+    def set_ip(self, startinn, endinn, startouts=0, endouts=0):
+        self.inning_start = innings_val(startinn, startouts)
+        self.inning_end = innings_val(endinn, endouts)
+        self.innings_pitched = self.inning_end - innings_val(self.inning_start.innings if self.inning_start.innings != 0 else 1, self.inning_start.outs) #innings_val(endinn - (1 if startinn == 0 else 0), endouts) - innings_val(startinn, startouts)
+        return self.innings_pitched
     def set_ip(self):
-        self.innings_pitched = innings_val(self.inning_end.innings - 1, self.inning_end.outs) - self.inning_start
+        self.innings_pitched = self.inning_end - innings_val(self.inning_start.innings if self.inning_start.innings != 0 else 1, self.inning_start.outs)
+        return self.innings_pitched
 
 def parse_game_for_batteries(game):
     
@@ -89,10 +91,42 @@ def parse_game_for_batteries(game):
             away_sp_perf = pitcher_perf(False, starter.player_id)
             away_sp_perf.inning_start = innings_val(0, 0)
 
+    def add_battery_to_dict(catcher, game, pperf):
+        for dat in game.data:
+            if pperf.player_id == dat.pitcher:
+                pperf.earned_runs = dat.earned_runs
+                break
+        if pperf.earned_runs != -1:
+            pperf.inning_end = innings_val(inning, outs)
+            pperf.set_ip()
+            #print('catcher {} caught {}.{} innings for pitcher {} [{}]'.
+            #      format(catcher, pperf.innings_pitched.innings, pperf.innings_pitched.outs, pperf.player_id, 'home' if play.is_home else 'away'))
+            if pperf.innings_pitched is not None and pperf.innings_pitched.is_valid():
+                era = 'infinite'
+                if pperf.innings_pitched.to_float() != 0:
+                    era = (float(pperf.earned_runs)/pperf.innings_pitched.to_float()) * 9.0
+                #print('\t{} is charged with {} earned runs (determined at end of game) over {}.{} innings pitched (ERA = {})'
+                #      .format(pperf.player_id, pperf.earned_runs, pperf.innings_pitched.innings, pperf.innings_pitched.outs, "{0:.2f}".format(era) if era != 'infinite' else era))
+
+                batteries = dict_catchers.get(catcher)
+                if batteries is None:
+                    dict_catchers[catcher] = { pperf.player_id : { game : pperf } }
+                    batteries = dict_catchers.get(catcher)
+                #batteries[pperf.player_id][game] = {}
+                pitcher = batteries.get(pperf.player_id)
+                if pitcher is None:
+                    batteries[pperf.player_id] = { game : pperf }
+                    pitcher = batteries.get(pperf.player_id)
+                pitcher[game] = pperf # maybe append a list of other stats later when I can extract more data (earned runs, walks, etc.)
+        else:
+            print('COULD NOT FIND PITCHER {} IN DATA FIELDS!!!'.format(pitcher))
+
 
     outs = 0
     inning = 0
     is_home = None
+    catcher = None
+    pperf = None
 
     for n, play in enumerate(game.plays):
         if (play.is_home != is_home) and play._type != rt.sub.value:
@@ -107,60 +141,55 @@ def parse_game_for_batteries(game):
         if (hasattr(play, 'inning') and play.inning != inning):
             inning = int(play.inning)
         if play._type == rt.play.value:
-            print ('\n=== {} of the {} ==='.format('bottom' if play.is_home else 'top', inning))            
+            #print ('\n=== {} of the {} ==='.format('bottom' if is_home else 'top', inning))
             play.parse_play_results()
+            #print('{}'.format(','.join(play._values)))
             if (play.outs_made != -1):
                 outs += play.outs_made
-                print('total outs in inning:    [{}]'.format(play.outs_made, outs))
+                #print('+{} outs; total outs in inning:    [{}]'.format(play.outs_made, outs))
         if play._type == rt.sub.value:
-            print('{} replaces {} for {} team, batting {}, with {} outs left in the inning.'
-                  .format(play.player_id, fpos.getname(play.sub_field_pos), 'home' if play.is_home else 'away', play.batting_order, outs))
+            #print('{} replaces {} for {} team, batting {}, with {} outs left in the inning.'
+            #      .format(play.player_id, fpos.getname(play.sub_field_pos), 'home' if is_home else 'away', play.batting_order, outs))
             if play.sub_field_pos == fpos.P:
-                catcher = home_c if play.is_home else away_c
-                pperf = home_sp_perf if play.is_home else away_sp_perf
-                print('catcher {} caught {}.{} innings for pitcher {} [{}]'.
-                      format(catcher, inning, outs, pperf.player_id, 'home' if play.is_home else 'away'))
-                for dat in game.data:
-                    if pperf.player_id == dat.pitcher:
-                        pperf.earned_runs = dat.earned_runs
-                        break
-                if pperf.earned_runs != -1:
-                    pperf.inning_end = innings_val(inning, outs)
-                    pperf.set_ip()
-                    if pperf.innings_pitched is not None and pperf.innings_pitched.is_valid():
-                        era = (float(pperf.earned_runs)/pperf.innings_pitched.to_float()) * 9.0
-                        print('\t{} is charged with {} earned runs (determined at end of game) over {}.{} innings pitched (ERA = {})'
-                              .format(pperf.player_id, pperf.earned_runs, pperf.innings_pitched.innings, pperf.innings_pitched.outs, "{0:.2f}".format(era)))
-
-                        batteries = dict_catchers.get(catcher)
-                        if batteries is None:
-                            dict_catchers[catcher] = {}
-                            batteries = dict_catchers.get(catcher)                        
-                        batteries[pperf.player_id] = {game : pperf} # maybe append a list of other stats later when I can extract more data (earned runs, walks, etc.)
-                        #### set new pitcher ####
-                        pperf = pitcher_perf(play.is_home, play.player_id)
-                        pperf.inning_start = innings_val(inning, outs)
-                else:
-                    print('COULD NOT FIND PITCHER {} IN DATA FIELDS!!!'.format(pitcher))
-                    
-            if play.sub_field_pos == fpos.C:
-                catcher = home_c if play.is_home else away_c
-                pperf = home_sp_perf if play.is_home else away_sp_perf
-                print('catcher {} for the {} team replaced by catcher {}'.format(catcher, 'home' if play.is_home else 'away', play.player_id))
+                catcher = home_c if is_home else away_c
+                pperf = home_sp_perf if is_home else away_sp_perf
                 
-                batteries = dict_catchers.get(catcher)
-                if batteries is None:
-                    dict_catchers[catcher] = {}
-                    batteries = dict_catchers.get(catcher)                        
-                batteries[pperf.player_id] = {game : pperf} # maybe append a list of other stats later when I can extract more data (earned runs, walks, etc.)
-                #### set new catcher ####                
-                if play.is_home == True: home_c = play.player_id
-                else: away_c = play.player_id
-                #### we need to create a new pitcher record because the battery is different ####
-                #pperf = pitcher_perf(play.is_home, play.player_id)
+                add_battery_to_dict(catcher, game, pperf)
 
-                pperf.inning_start = innings_val(inning, outs)
+                #### set new pitcher ####
+                if (is_home):
+                    home_sp_perf = pitcher_perf(is_home, play.player_id)
+                    home_sp_perf.inning_start = innings_val(inning, outs)
+                else:
+                    away_sp_perf = pitcher_perf(is_home, play.player_id)
+                    away_sp_perf.inning_start = innings_val(inning, outs)
 
+                   
+            # this is hard right now
+            if play.sub_field_pos == fpos.C:
+                catcher = home_c if is_home else away_c
+            #    pperf = home_sp_perf if is_home else away_sp_perf
+                print('catcher {} for the {} team replaced by catcher {}'.format(catcher, 'home' if is_home else 'away', play.player_id))
+                
+            #    batteries = dict_catchers.get(catcher)
+            #    if batteries is None:
+            #        dict_catchers[catcher] = {}
+            #        batteries = dict_catchers.get(catcher)                        
+            #    batteries[pperf.player_id] = {game : pperf} # maybe append a list of other stats later when I can extract more data (earned runs, walks, etc.)
+            #    #### set new catcher ####                
+            #    if is_home == True: home_c = play.player_id
+            #    else: away_c = play.player_id
+            #    #### we need to create a new pitcher record because the battery is different ####
+            #    #pperf = pitcher_perf(is_home, play.player_id)
+            #    pperf.inning_start = innings_val(inning, outs)
+    
+    # add the last batteries at end of game:
+    add_battery_to_dict(home_c, game, home_sp_perf)
+    add_battery_to_dict(away_c, game, away_sp_perf)
+            
+            
+    if outs != 3:
+        print('game did not end with 3 outs???')
 
 def run_tests():    
     testcases = [
@@ -265,9 +294,21 @@ def main():
         parse_game_for_batteries(game)
 
         #break #debug to just analyze one game
-                    
         #for sub in game.substitutions:
         #    if (sub.s)
+
+    # debug print:
+    for catcher, batteries in dict_catchers.iteritems():
+        total_innings = innings_val(0, 0)
+        for pitcher, game in batteries.iteritems():
+            for game, perf in game.iteritems():
+                print('{} | {} | innings: {}.{} | earned runs: {}'.format(catcher, pitcher, perf.innings_pitched.innings, perf.innings_pitched.outs, perf.earned_runs))
+                total_innings += perf.innings_pitched
+        #total = innings_val.from_total_outs(catcher_innings)
+        print('{} caught {}.{} innings total.'.format(catcher, total_innings.innings, int(total_innings.outs)))
+    #print('{}'.format(dict_catchers))
+
+
     print ('time to compile catcher and pitcher records: {}'.format(time.time() - begin_time))
 
     return

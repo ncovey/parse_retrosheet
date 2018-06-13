@@ -86,7 +86,7 @@ class play_record(record):
                     else:
                         self.outs_made -= 1 if self.outs_made > 0 else 0
 
-                    print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
+                    #print('\t{} >>>>>>> {} outs'.format(res[0], self.outs_made))
 
 
 

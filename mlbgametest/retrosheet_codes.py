@@ -404,8 +404,8 @@ class play_formats(Enum):
                                 coords.remove(y)
                                 break
             
-        print('matching formats for "{}":'.format(_events))
-        for match in matches: print('{}'.format(match))
+        #print('matching formats for "{}":'.format(_events))
+        #for match in matches: print('{}'.format(match))
 
         if len(matches) < 1:
             print('COULD NOT FIND A MATCH!!!')
